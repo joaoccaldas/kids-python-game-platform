@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{courseTitle}} - Python Games for Kids</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        /* Minecraft-inspired elements */
+        .minecraft-block {
+            background-color: #8bc34a;
+            border: 3px solid #5d8c29;
+            box-shadow: inset 0 0 0 2px #5d8c29;
+        }
+        
+        .achievement-badge {
+            background: linear-gradient(135deg, #ffd700, #ffa500);
+            border: 2px solid #daa520;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin: 5px;
+        }
+        
+        .progress-bar-minecraft {
+            height: 20px;
+            background-color: #5d4037;
+            border: 2px solid #3e2723;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress-fill-minecraft {
+            height: 100%;
+            background: linear-gradient(to right, #4CAF50, #8BC34A);
+            transition: width 0.3s ease;
+        }
+        
+        .course-header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .knowledge-panel {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .resource-link {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            text-decoration: none;
+            margin: 5px 2px;
+            font-size: 0.9em;
+        }
+        
+        .resource-link:hover {
+            background-color: #2980b9;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/skulpt/1.2.0/skulpt.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/skulpt/1.2.0/skulpt-stdlib.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><a href="../landing.html" style="color: white; text-decoration: none;">🐍 Python Adventures</a></h1>
+            <div class="course-header">
+                <h2>{{courseEmoji}} {{courseTitle}}</h2>
+                <p>{{courseDescription}}</p>
+            </div>
+            <div class="progress-container">
+                <div class="level-indicator">Level: <span id="current-level">1</span>/{{totalLevels}}</div>
+                <div class="progress-bar-minecraft">
+                    <div class="progress-fill-minecraft" id="progress-fill" style="width: 0%;"></div>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="editor-section">
+                <div class="editor-header">
+                    <h2>Code Editor</h2>
+                    <div class="level-navigation">
+                        <button id="prev-level" class="nav-btn">← Prev</button>
+                        <span id="level-title">{{defaultLevelTitle}}</span>
+                        <button id="next-level" class="nav-btn">Next →</button>
+                    </div>
+                </div>
+                
+                <textarea id="code-editor" spellcheck="false">{{defaultCode}}</textarea>
+                
+                <div class="editor-controls">
+                    <button id="run-btn" class="primary-btn">▶ Run Code</button>
+                    <button id="reset-btn" class="secondary-btn">↺ Reset</button>
+                    <button id="hint-btn" class="secondary-btn">💡 Hint</button>
+                    <button id="knowledge-btn" class="secondary-btn">📚 Knowledge</button>
+                </div>
+                
+                <div id="debug-output" class="debug-panel">
+                    <h3>Output:</h3>
+                    <pre id="output-content"></pre>
+                </div>
+                
+                <div class="knowledge-panel" id="knowledge-panel" style="display: none;">
+                    <h3>📚 Knowledge Base</h3>
+                    <p id="knowledge-content">Select a concept to learn more...</p>
+                    <div id="resources-container"></div>
+                </div>
+            </div>
+            
+            <div class="canvas-section">
+                <h2>Game Canvas</h2>
+                <div class="canvas-container">
+                    <canvas id="game-canvas" width="600" height="400"></canvas>
+                </div>
+                <div class="level-description">
+                    <p id="level-description">{{defaultDescription}}</p>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Made with ❤️ for young programmers | All code runs safely in your browser</p>
+        </footer>
+    </div>
+
+    <script>
+        // Get course type from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseType = urlParams.get('course') || 'games';
+        
+        // Course-specific levels configuration
+        const courseLevels = {
+            games: [
+                {
+                    id: 1,
+                    title: "Simple Square Game",
+                    description: "Draw a square using turtle graphics. This is the foundation for game sprites!",
+                    difficulty: "Beginner",
+                    objectives: ["Draw 4 equal sides", "Make 4 right angles", "Understand basic movement"],
+                    code: `import turtle\nimport time\nt = turtle.Turtle()\n\n# Draw a square - the basis for many game sprites\nfor i in range(4):\n    t.forward(100)\n    t.right(90)\n\nt.write("Basic Square - Foundation for Games!", font=("Arial", 12, "normal"))`,
+                    hint: "Use a for loop with range(4) to draw 4 sides of the square.",
+                    knowledge: "In game development, squares and rectangles form the basis of many sprites and game elements. Understanding how to draw and manipulate them is crucial."
+                },
+                {
+                    id: 2,
+                    title: "Colorful Game Elements",
+                    description: "Draw colorful shapes that could represent game objects.",
+                    difficulty: "Beginner",
+                    objectives: ["Use multiple colors", "Draw game-like shapes", "Understand RGB values"],
+                    code: `import turtle\nt = turtle.Turtle()\ncolors = ['red', 'blue', 'green', 'yellow']\n\nfor i in range(4):\n    t.color(colors[i])\n    t.forward(100)\n    t.right(90)\n\nt.penup()\nt.goto(0, -50)\nt.pendown()\nt.write("Colors for Game Objects!", font=("Arial", 12, "normal"))`,
+                    hint: "Try using the color() function with different colors for different game elements.",
+                    knowledge: "Colors help distinguish different game elements and create visual appeal in games. Different colors can represent different types of objects or power-ups."
+                },
+                {
+                    id: 3,
+                    title: "Circular Game Objects",
+                    description: "Create circular patterns that could represent coins, shields, or other game items.",
+                    difficulty: "Easy",
+                    objectives: ["Draw multiple circles", "Create patterns", "Understand collision shapes"],
+                    code: `import turtle\nt = turtle.Turtle()\n\nfor i in range(36):\n    t.circle(50)\n    t.left(10)\n\nt.penup()\nt.goto(-100, -100)\nt.pendown()\nt.write("Coins and Power-ups!", font=("Arial", 12, "normal"))`,
+                    hint: "Use the circle() function in a loop with rotation to create coin patterns.",
+                    knowledge: "Circular shapes are common in games for coins, shields, energy orbs, and other collectible items. They're also used for collision detection."
+                },
+                {
+                    id: 4,
+                    title: "Star Collectibles",
+                    description: "Draw stars that could be collectible items in a game.",
+                    difficulty: "Easy",
+                    objectives: ["Draw a 5-pointed star", "Use correct angles", "Create collectible items"],
+                    code: `import turtle\nt = turtle.Turtle()\nt.color("gold")\n\nfor i in range(5):\n    t.forward(100)\n    t.right(144)\n\nt.penup()\nt.goto(-80, -80)\nt.pendown()\nt.color("black")\nt.write("Collectible Star!", font=("Arial", 12, "normal"))`,
+                    hint: "A star has 5 points, and the turning angle is 144 degrees. Perfect for collectibles!",
+                    knowledge: "Stars are iconic collectible items in many games. The geometry of stars involves understanding angles and symmetry, which are important in game design."
+                },
+                {
+                    id: 5,
+                    title: "Moving Platforms",
+                    description: "Create a spiral pattern that demonstrates animation concepts.",
+                    difficulty: "Medium",
+                    objectives: ["Create a spiral", "Understand animation", "Implement movement patterns"],
+                    code: `import turtle\nt = turtle.Turtle()\n\nfor i in range(50):\n    t.forward(i * 5)\n    t.right(90)\n\nt.penup()\nt.goto(-100, -120)\nt.pendown()\nt.write("Moving Platforms Concept!", font=("Arial", 12, "normal"))`,
+                    hint: "Increase the distance moved in each iteration to create animation effects.",
+                    knowledge: "Animation in games is created by changing positions over time. Understanding how to modify properties in loops is essential for creating moving elements."
+                },
+                {
+                    id: 6,
+                    title: "Animated Characters",
+                    description: "Create a colorful spiral that represents animated character movement.",
+                    difficulty: "Medium",
+                    objectives: ["Use multiple colors", "Create spiral effect", "Animate character designs"],
+                    code: `import turtle\nt = turtle.Turtle()\ncolors = ['red', 'orange', 'yellow', 'green', 'blue', 'purple']\n\nfor i in range(50):\n    t.pencolor(colors[i % 6])\n    t.width(i / 5 + 1)\n    t.forward(i * 2)\n    t.right(90)\n\nt.penup()\nt.goto(-120, -150)\nt.pendown()\nt.write("Animated Character!", font=("Arial", 12, "normal"))`,
+                    hint: "Change color and pen size in each iteration to create animated character effects.",
+                    knowledge: "Character animation involves changing visual properties over time. Color changes and size variations can simulate movement and special effects."
+                },
+                {
+                    id: 7,
+                    title: "Game Environment",
+                    description: "Animate a moving square that represents a character in a game world.",
+                    difficulty: "Hard",
+                    objectives: ["Create animation", "Rotate shape continuously", "Design game environments"],
+                    code: `import time\nimport turtle\nt = turtle.Turtle()\nt.speed(0)\n\nfor _ in range(36):\n    for i in range(4):\n        t.forward(100)\n        t.right(90)\n    t.right(10)\ntime.sleep(2)\n\nt.penup()\nt.goto(-100, -150)\nt.pendown()\nt.write("Rotating Game Element!", font=("Arial", 12, "normal"))`,
+                    hint: "Rotate the square in each iteration to create environmental animation.",
+                    knowledge: "Game environments often feature moving elements like rotating platforms, spinning obstacles, or animated backgrounds that enhance the gaming experience."
+                },
+                {
+                    id: 8,
+                    title: "Interactive Controls",
+                    description: "Conceptual example of how to make game elements respond to user input.",
+                    difficulty: "Hard",
+                    objectives: ["Understand input concepts", "Plan interactive features", "Design controls"],
+                    code: `import turtle\nt = turtle.Turtle()\nt.shape("turtle")\n\ndef move_up():\n    t.setheading(90)\n    t.forward(50)\n\ndef move_down():\n    t.setheading(270)\n    t.forward(50)\n\ndef move_left():\n    t.setheading(180)\n    t.forward(50)\n\ndef move_right():\n    t.setheading(0)\n    t.forward(50)\n\n# Note: Key bindings work in actual implementation\nprint("Use arrow keys to move the turtle")\nt.write("Interactive Controls!", font=("Arial", 12, "normal"))`,
+                    hint: "The turtle can be controlled with keyboard inputs in actual game implementations.",
+                    knowledge: "Input handling is crucial in games. Players expect responsive controls that allow them to interact with the game world effectively."
+                },
+                {
+                    id: 9,
+                    title: "Complex Game Patterns",
+                    description: "Combine different shapes to create complex game elements and backgrounds.",
+                    difficulty: "Expert",
+                    objectives: ["Create complex patterns", "Use functions", "Design game scenes"],
+                    code: `import turtle\nt = turtle.Turtle()\n\ndef draw_flower():\n    for _ in range(6):\n        t.circle(30)\n        t.left(60)\n\ndraw_flower()\nt.penup()\nt.goto(0, -100)\nt.pendown()\nt.goto(0, -150)\nt.write("Complex Game Scene!", font=("Arial", 12, "normal"))`,
+                    hint: "Create functions to reuse code for repeated game elements and scene components.",
+                    knowledge: "Functions help organize game code by breaking complex scenes into reusable components. This makes games easier to develop and maintain."
+                },
+                {
+                    id: 10,
+                    title: "Final Game Challenge",
+                    description: "Create your own game element combining all the skills you've learned!",
+                    difficulty: "Expert",
+                    objectives: ["Combine all skills", "Be creative", "Design a complete game element"],
+                    code: `import turtle\nt = turtle.Turtle()\nt.speed(0)\n\n# Create your own amazing game element here!\n# Try combining everything you've learned\n\ndef my_game_element():\n    for i in range(36):\n        t.circle(i * 2)\n        t.left(10)\n\nmy_game_element()\nt.penup()\nt.goto(-120, -180)\nt.pendown()\nt.write("My Game Creation!", font=("Arial", 12, "normal"))`,
+                    hint: "Combine all the techniques you've learned to create something unique for your game!",
+                    knowledge: "Game development combines all the programming concepts you've learned. Creativity and problem-solving are essential skills for creating engaging games."
+                }
+            ],
+            space: [
+                {
+                    id: 1,
+                    title: "Planet Dots",
+                    description: "Draw dots representing planets in our solar system.",
+                    difficulty: "Beginner",
+                    objectives: ["Draw basic shapes", "Position elements", "Represent celestial bodies"],
+                    code: `import turtle\nt = turtle.Turtle()\n\n# Draw our sun\nt.dot(50, "yellow")\n\nt.penup()\nt.goto(100, 0)\nt.pendown()\n\nt.dot(20, "blue")  # Earth\nt.write(" Earth", align="left", font=("Arial", 12, "normal"))\n\nt.penup()\nt.goto(-100, 0)\nt.pendown()\n\nt.dot(15, "red")  # Mars\nt.write(" Mars", align="right", font=("Arial", 12, "normal"))`,
+                    hint: "Use the dot() function to represent planets of different sizes and colors.",
+                    knowledge: "Astronomy visualization helps us understand the scale and positions of celestial bodies in our solar system and beyond."
+                },
+                {
+                    id: 2,
+                    title: "Orbital Paths",
+                    description: "Create orbital paths around a central star.",
+                    difficulty: "Beginner",
+                    objectives: ["Draw orbits", "Use circular motion", "Visualize celestial mechanics"],
+                    code: `import turtle\nt = turtle.Turtle()\n\n# Draw the sun in the center\nt.dot(40, "orange")\n\n# Draw orbital paths\nt.penup()\nt.goto(0, -60)\nt.pendown()\nt.circle(60)\n\nt.penup()\nt.goto(0, -100)\nt.pendown()\nt.circle(100)\n\n# Place planets\nt.penup()\nt.goto(0, -60)\nt.pendown()\nt.dot(15, "blue")\n\nt.penup()\nt.goto(0, -100)\nt.pendown()\nt.dot(12, "red")`,
+                    hint: "Use the circle() function to draw orbital paths around a central star.",
+                    knowledge: "Planetary orbits are elliptical, but for visualization purposes, circular orbits help us understand the basic concepts of celestial mechanics."
+                },
+                {
+                    id: 3,
+                    title: "Solar System Model",
+                    description: "Create a scaled model of our solar system.",
+                    difficulty: "Easy",
+                    objectives: ["Create a model", "Scale representations", "Organize data"],
+                    code: `import turtle\nt = turtle.Turtle()\nt.speed(0)\n\n# Sun in the center\nt.dot(50, "yellow")\n\n# Planet distances and sizes (scaled)\nplanets = [\n    {"name": "Mercury", "distance": 40, "size": 5, "color": "gray"},\n    {"name": "Venus", "distance": 60, "size": 8, "color": "tan"},\n    {"name": "Earth", "distance": 80, "size": 9, "color": "blue"},\n    {"name": "Mars", "distance": 100, "size": 7, "color": "red"},\n]\n\nfor planet in planets:\n    t.penup()\n    t.goto(0, -planet["distance"])\n    t.pendown()\n    t.circle(planet["distance"])  # Orbit\n    \n    t.penup()\n    t.goto(planet["distance"], 0)\n    t.pendown()\n    t.dot(planet["size"], planet["color"])\n    t.write(f" {planet["name"]}", align="left", font=("Arial", 8, "normal"))`,
+                    hint: "Use a list of dictionaries to organize planet data and loop through them.",
+                    knowledge: "Data structures like lists and dictionaries are essential for organizing information about celestial bodies in astronomical applications."
+                },
+                {
+                    id: 4,
+                    title: "Constellation Patterns",
+                    description: "Draw star patterns that form constellations.",
+                    difficulty: "Easy",
+                    objectives: ["Connect stars", "Create patterns", "Visualize constellations"],
+                    code: `import turtle\nt = turtle.Turtle()\n\nt.dot(10, "white")  # Bright star\n\n# Draw lines to connect stars\nstars = [(50, 50), (100, 0), (150, 30), (200, -20)]\n\nt.penup()\nt.goto(stars[0][0], stars[0][1])\nt.pendown()\n\nt.dot(8, "white")  # Another star\n\nfor x, y in stars[1:]:\n    t.goto(x, y)\n    t.dot(8, "white")\n\nt.penup()\nt.goto(0, -50)\nt.pendown()\nt.color("white")\nt.write("Constellation Pattern!", font=("Arial", 12, "normal"))`,
+                    hint: "Connect star positions with lines to form recognizable constellation patterns.",
+                    knowledge: "Constellations are patterns of stars that humans have identified throughout history. Programming helps visualize these patterns and their relationships."
+                },
+                {
+                    id: 5,
+                    title: "Rocket Trajectory",
+                    description: "Simulate a rocket's path through space.",
+                    difficulty: "Medium",
+                    objectives: ["Simulate motion", "Plot trajectories", "Understand physics"],
+                    code: `import turtle\nt = turtle.Turtle()\n\nt.speed(1)\n\n# Draw Earth\nt.penup()\nt.goto(0, -150)\nt.pendown()\nt.dot(80, "blue")\nt.write(" Earth", align="center", font=("Arial", 12, "normal"))\n\n# Rocket launch\nrocket_x = 0\nrocket_y = -100\n\nt.penup()\nt.goto(rocket_x, rocket_y)\nt.pendown()\n\nt.dot(10, "silver")  # Rocket\n\n# Simulate trajectory\nfor i in range(20):\n    rocket_x += 10\n    rocket_y += i * 2  # Acceleration\n    t.goto(rocket_x, rocket_y)\n    t.dot(5, "silver")\n\nt.penup()\nt.goto(100, 100)\nt.pendown()\nt.write(" Rocket Trajectory", font=("Arial", 12, "normal"))`,
+                    hint: "Simulate rocket movement by updating position based on velocity and acceleration.",
+                    knowledge: "Space mission planning involves calculating trajectories using physics principles. Programming allows us to simulate these complex calculations."
+                },
+                {
+                    id: 6,
+                    title: "Satellite Orbit",
+                    description: "Animate a satellite orbiting around Earth.",
+                    difficulty: "Medium",
+                    objectives: ["Create animation", "Simulate orbits", "Visualize orbital mechanics"],
+                    code: `import turtle\nimport math\nt = turtle.Turtle()\n\n# Draw Earth\nt.penup()\nt.goto(0, -50)\nt.pendown()\nt.dot(100, "blue")\nt.write(" Earth", align="center", font=("Arial", 12, "normal"))\n\n# Satellite orbit\nt.penup()\nt.goto(150, 0)\nt.pendown()\nt.circle(150)  # Orbit path\n\n# Animate satellite\nsat_angle = 0\nfor i in range(36):  # Complete orbit\n    x = 150 * math.cos(math.radians(sat_angle))\n    y = 150 * math.sin(math.radians(sat_angle))\n    \n    t.penup()\n    t.goto(x, y)\n    t.pendown()\n    t.dot(8, "silver")\n    sat_angle += 10\n\nt.penup()\nt.goto(-200, -150)\nt.pendown()\nt.write(" Satellite Orbit", font=("Arial", 12, "normal"))`,
+                    hint: "Use trigonometry to calculate satellite position in its orbit.",
+                    knowledge: "Satellites orbit Earth in predictable paths calculated using mathematics and physics. Understanding orbital mechanics is crucial for space missions."
+                },
+                {
+                    id: 7,
+                    title: "Telescope View",
+                    description: "Create a visualization of what a telescope might see.",
+                    difficulty: "Hard",
+                    objectives: ["Create detailed visualization", "Simulate telescope view", "Focus on specific areas"],
+                    code: `import turtle\nt = turtle.Turtle()\n\n# Telescope view circle\nt.penup()\nt.goto(0, -100)\nt.pendown()\nt.circle(100)\n\n# Stars in telescope view\nimport random\nfor i in range(20):\n    x = random.randint(-90, 90)\n    y = random.randint(-90, 90)\n    brightness = random.randint(3, 8)\n    t.penup()\n    t.goto(x, y)\n    t.pendown()\n    t.dot(brightness, "white")\n\n# Focus on a bright star\nbright_star_x = random.randint(-50, 50)\nbright_star_y = random.randint(-50, 50)\nt.penup()\nt.goto(bright_star_x, bright_star_y)\nt.pendown()\nt.dot(15, "yellow")\nt.write(" Bright Star!", align="left", font=("Arial", 10, "normal"))`,
+                    hint: "Create a circular field of view with randomly positioned stars of varying brightness.",
+                    knowledge: "Telescopes provide detailed views of distant objects. Programming helps astronomers analyze and visualize these observations."
+                },
+                {
+                    id: 8,
+                    title: "Galaxy Simulation",
+                    description: "Create a simplified model of a spiral galaxy.",
+                    difficulty: "Hard",
+                    objectives: ["Model complex structures", "Use advanced algorithms", "Simulate galactic formation"],
+                    code: `import turtle\nimport math\nt = turtle.Turtle()\n\nt.speed(0)\n\n# Galaxy core\nt.dot(30, "yellow")\n\n# Spiral arms\nfor arm in range(4):  # Four spiral arms\n    for i in range(50):\n        angle = i * 0.5\n        radius = i * 2\n        x = radius * math.cos(angle + arm * math.pi/2)\n        y = radius * math.sin(angle + arm * math.pi/2)\n        \n        t.penup()\n        t.goto(x, y)\n        t.pendown()\n        star_size = max(1, 5 - i//15)  # Stars get smaller further out\n        t.dot(star_size, "white")\n\nt.penup()\nt.goto(-150, -200)\nt.pendown()\nt.write(" Spiral Galaxy", font=("Arial", 12, "normal"))`,
+                    hint: "Use mathematical functions to create spiral patterns like those found in galaxies.",
+                    knowledge: "Galaxies are complex structures that can be modeled using mathematical functions. Programming enables scientists to simulate cosmic phenomena."
+                },
+                {
+                    id: 9,
+                    title: "Mission Control Dashboard",
+                    description: "Create a dashboard showing space mission data.",
+                    difficulty: "Expert",
+                    objectives: ["Organize complex data", "Create interfaces", "Visualize telemetry"],
+                    code: `import turtle\nt = turtle.Turtle()\n\n# Mission Control Dashboard\n\nt.penup()\nt.goto(-200, 150)\nt.pendown()\nt.write("SPACE MISSION DASHBOARD", font=("Arial", 16, "bold"))\n\n# Mission status\nstatuses = [\n    ("Fuel Level", "85%"),\n    ("Oxygen", "92%"),\n    ("Distance", "1.2M km"),\n    ("Speed", "24,500 km/h")\n]\n\nfor i, (label, value) in enumerate(statuses):\n    t.penup()\n    t.goto(-200, 100 - i*30)\n    t.pendown()\n    t.write(f"{label}: {value}", font=("Arial", 12, "normal"))\n\n# Spacecraft position\nt.penup()\nt.goto(50, 50)\nt.pendown()\nt.dot(20, "silver")\nt.write(" Spacecraft", align="left", font=("Arial", 12, "normal"))`,
+                    hint: "Organize mission data using structured layouts and clear visual indicators.",
+                    knowledge: "Mission control systems require clear visualization of complex data. Programming enables the creation of effective dashboards for monitoring spacecraft."
+                },
+                {
+                    id: 10,
+                    title: "Space Exploration Final",
+                    description: "Create your own space exploration visualization combining all skills!",
+                    difficulty: "Expert",
+                    objectives: ["Combine all skills", "Be creative", "Design a space application"],
+                    code: `import turtle\nt = turtle.Turtle()\nt.speed(0)\n\n# Create your own space visualization here!\n# Combine all the techniques you've learned\n\nt.penup()\nt.goto(-200, 150)\nt.pendown()\nt.write("MY SPACE EXPLORATION", font=("Arial", 16, "bold"))\n\n# Example: Solar system with spaceship\n# Sun\nt.penup()\nt.goto(0, 0)\nt.pendown()\nt.dot(50, "yellow")\n\n# Planets\nfor i in range(4):\n    angle = i * 90\n    x = 100 * (i + 1) * 0.7\n    t.penup()\n    t.goto(x, 0)\n    t.pendown()\n    t.dot(10 + i*3, ["mercury", "venus", "earth", "mars"][i % 4][:3])\n\n# Spaceship trajectory\nt.penup()\nt.goto(-100, -100)\nt.pendown()\nfor i in range(20):\n    t.forward(10)\n    t.left(5)\n\nt.dot(15, "silver")\nt.write(" My Spaceship", align="left", font=("Arial", 10, "normal"))`,
+                    hint: "Combine all the techniques you've learned to create your own space exploration visualization!",
+                    knowledge: "Space exploration combines many scientific disciplines. Programming skills enable the analysis and visualization of complex astronomical data."
+                }
+            ],
+            iot: [
+                {
+                    id: 1,
+                    title: "Smart Light Switch",
+                    description: "Draw a representation of a smart light switch that can be controlled remotely.",
+                    difficulty: "Beginner",
+                    objectives: ["Draw basic circuits", "Represent IoT devices", "Understand digital states"],
+                    code: `import turtle\nt = turtle.Turtle()\n\n# Draw a light bulb\nt.fillcolor("yellow")\nt.begin_fill()\nt.circle(30)\nt.end_fill()\n\n# Draw the socket\nt.fillcolor("gray")\nt.begin_fill()\nt.penup()\nt.goto(-15, 30)\nt.pendown()\nt.goto(15, 30)\nt.goto(10, 60)\nt.goto(-10, 60)\nt.goto(-15, 30)\nt.end_fill()\n\nt.penup()\nt.goto(-30, -50)\nt.pendown()\nt.write("Smart Light (ON)", font=("Arial", 12, "normal"))`,
+                    hint: "Use shapes to represent IoT devices like smart lights that can be controlled remotely.",
+                    knowledge: "IoT devices like smart lights connect to the internet and can be controlled remotely. This is achieved through microcontrollers and communication protocols."
+                },
+                {
+                    id: 2,
+                    title: "Temperature Sensor",
+                    description: "Visualize a temperature sensor and its readings.",
+                    difficulty: "Beginner",
+                    objectives: ["Represent sensors", "Display data", "Show measurement units"],
+                    code: `import turtle\nt = turtle.Turtle()\n\n# Draw thermometer\nt.penup()\nt.goto(0, -100)\nt.pendown()\nt.goto(0, 50)\nt.goto(-10, 50)\nt.goto(-10, -100)\nt.goto(0, -100)\n\n# Draw mercury\nt.fillcolor("red")\nt.begin_fill()\nt.penup()\nt.goto(-10, -20)\nt.pendown()\nt.goto(0, -20)\nt.goto(0, 50)\nt.goto(-10, 50)\nt.end_fill()\n\n# Draw sensor housing\nt.penup()\nt.goto(-20, -120)\nt.pendown()\nt.fillcolor("lightgray")\nt.begin_fill()\nt.circle(20)\nt.end_fill()\n\nt.penup()\nt.goto(-40, -150)\nt.pendown()\nt.write("Temp: 22°C", font=("Arial", 12, "normal"))`,
+                    hint: "Create a visual representation of a temperature sensor with its current reading.",
+                    knowledge: "Temperature sensors are common IoT devices that measure ambient temperature. They communicate this data to central systems for monitoring and control."
+                },
+                {
+                    id: 3,
+                    title: "Door Security System",
+                    description: "Draw a door with a smart lock and security sensor.",
+                    difficulty: "Easy",
+                    objectives: ["Create security systems", "Show state changes", "Represent access control"],
+                    code: `import turtle\nt = turtle.Turtle()\n\n# Draw door\nt.fillcolor("brown")\nt.begin_fill()\nt.penup()\nt.goto(-50, -100)\nt.pendown()\nt.goto(50, -100)\nt.goto(50, 100)\nt.goto(-50, 100)\nt.goto(-50, -100)\nt.end_fill()\n\n# Draw door handle\nt.penup()\nt.goto(35, 0)\nt.pendown()\nt.circle(5)\n\n# Draw security sensor\nt.penup()\nt.goto(0, 120)\nt.pendown()\nt.dot(20, "green")\n\nt.penup()\nt.goto(-60, -150)\nt.pendown()\nt.write("Door: LOCKED", font=("Arial", 12, "normal"))`,
+                    hint: "Create a visual representation of a smart door with security features.",
+                    knowledge: "Smart door locks and security sensors are IoT devices that enhance home security. They can be monitored and controlled remotely."
+                },
+                {
+                    id: 4,
+                    title: "Smart Thermostat",
+                    description: "Visualize a smart thermostat displaying temperature and settings.",
+                    difficulty: "Easy",
+                    objectives: ["Display controls", "Show settings", "Represent HVAC systems"],
+                    code: `import turtle\nt = turtle.Turtle()\n\n# Draw thermostat frame\nt.penup()\nt.goto(-60, -40)\nt.pendown()\nt.fillcolor("lightgray")\nt.begin_fill()\nfor _ in range(2):\n    t.forward(120)\n    t.left(90)\n    t.forward(80)\n    t.left(90)\nt.end_fill()\n\n# Draw screen\nt.penup()\nt.goto(-50, 0)\nt.pendown()\nt.fillcolor("black")\nt.begin_fill()\nfor _ in range(2):\n    t.forward(100)\n    t.left(90)\n    t.forward(40)\n    t.left(90)\nt.end_fill()\n\n# Draw temperature display\nt.penup()\nt.goto(-40, 10)\nt.pendown()\nt.color("lime")\nt.write("22°C", font=("Arial", 16, "bold"))\n\nt.penup()\nt.goto(-50, -60)\nt.pendown()\nt.write("Set: 21°C | Status: AUTO", font=("Arial", 10, "normal"))`,
+                    hint: "Create a smart thermostat interface showing current and desired temperatures.",
+                    knowledge: "Smart thermostats automatically adjust heating and cooling based on programmed schedules and occupancy. They can be controlled remotely and optimize energy usage."
+                },
+                {
+                    id: 5,
+                    title: "Motion Detection System",
+                    description: "Draw a motion sensor detecting movement in a room.",
+                    difficulty: "Medium",
+                    objectives: ["Represent detection zones", "Show activity", "Visualize sensor networks"],
+                    code: `import turtle\nt = turtle.Turtle()\n\n# Draw room\nt.penup()\nt.goto(-150, -100)\nt.pendown()\nt.goto(150, -100)\nt.goto(150, 100)\nt.goto(-150, 100)\nt.goto(-150, -100)\n\n# Draw motion sensor\nt.penup()\nt.goto(-160, 50)\nt.pendown()\nt.dot(15, "blue")\n\nt.write("SENSOR", align="left", font=("Arial", 8, "normal"))\n\n# Draw detection arc\nt.penup()\nt.goto(-150, 50)\nt.pendown()\nt.color("red")\nt.setheading(0)\nt.circle(100, 60)  # Right arc\n\nt.penup()\nt.goto(-150, 50)\nt.pendown()\nt.setheading(180)\nt.circle(-100, 60)  # Left arc\n\n# Draw detected person\nt.penup()\nt.goto(50, 0)\nt.pendown()\nt.dot(20, "orange")\n\nt.penup()\nt.goto(-150, -150)\nt.pendown()\nt.write("Motion Detected!", font=("Arial", 12, "normal"))`,
+                    hint: "Create a motion sensor with detection zones and show when motion is detected.",
+                    knowledge: "PIR (Passive Infrared) sensors detect motion by measuring infrared radiation. IoT systems use these sensors for security, lighting control, and automation."
+                },
+                {
+                    id: 6,
+                    title: "Smart Irrigation System",
+                    description: "Visualize an automated watering system for plants.",
+                    difficulty: "Medium",
+                    objectives: ["Create automation systems", "Show water flow", "Represent environmental controls"],
+                    code: `import turtle\nt = turtle.Turtle()\n\n# Draw garden plot\nt.penup()\nt.goto(-100, -50)\nt.pendown()\nt.fillcolor("green")\nt.begin_fill()\nfor _ in range(2):\n    t.forward(200)\n    t.left(90)\n    t.forward(50)\n    t.left(90)\nt.end_fill()\n\n# Draw plants\nt.penup()\nt.goto(-70, -30)\nt.pendown()\nt.fillcolor("green")\nt.begin_fill()\nt.circle(10)\nt.end_fill()\n\nt.penup()\nt.goto(0, -30)\nt.pendown()\nt.fillcolor("green")\nt.begin_fill()\nt.circle(10)\nt.end_fill()\n\n# Draw sprinkler system\nt.penup()\nt.goto(-100, 0)\nt.pendown()\nt.goto(100, 0)\n\nfor x in [-70, -30, 10, 50]:\n    t.penup()\nt.goto(x, 0)\n.t.pendown()\n.t.goto(x, 20)\n.t.dot(8, "blue")  # Water droplets\n\nt.penup()\nt.goto(-100, -100)\nt.pendown()\nt.write("Auto Watering Active", font=("Arial", 12, "normal"))`,
+                    hint: "Create an irrigation system with sensors and automated watering controls.",
+                    knowledge: "Smart irrigation systems use soil moisture sensors to determine when to water plants. This conserves water and ensures optimal plant health."
+                },
+                {
+                    id: 7,
+                    title: "Security Camera Network",
+                    description: "Draw a network of security cameras monitoring a property.",
+                    difficulty: "Hard",
+                    objectives: ["Create monitoring systems", "Show coverage areas", "Represent video feeds"],
+                    code: `import turtle\nt = turtle.Turtle()\n\n# Draw house\nt.penup()\nt.goto(-80, -60)\nt.pendown()\nt.fillcolor("tan")\nt.begin_fill()\nfor _ in range(2):\n    t.forward(160)\n    t.left(90)\n    t.forward(100)\n    t.left(90)\nt.end_fill()\n\n# Draw roof\nt.penup()\nt.goto(-80, 40)\nt.pendown()\nt.goto(0, 80)\nt.goto(80, 40)\n\n# Draw cameras\ncameras = [(-100, 0), (100, 0), (0, 80)]\nfor x, y in cameras:\n    t.penup()\n    t.goto(x, y)\n    t.pendown()\n    t.dot(12, "black")\n    t.write("CAM", align="center", font=("Arial", 6, "normal"))\n    \n    # Draw viewing cone\n    t.penup()\n    t.goto(x, y)\n    t.pendown()\n    t.color("red", "red")\n    t.begin_fill()\n    t.setheading(0 if y == 0 else 90 if y > 0 else 270)\n    t.forward(50)\n    t.left(30)\n    t.goto(x, y)\n    t.goto(x, y)\n    t.right(60)\n    t.forward(50)\n    t.end_fill()\n    t.color("black")\n\nt.penup()\nt.goto(-120, -120)\nt.pendown()\nt.write("Camera Network Active", font=("Arial", 12, "normal"))`,
+                    hint: "Create multiple security cameras with overlapping coverage areas.",
+                    knowledge: "Security camera networks provide comprehensive surveillance coverage. IoT cameras stream video to centralized monitoring systems accessible remotely."
+                },
+                {
+                    id: 8,
+                    title: "Home Energy Monitor",
+                    description: "Visualize a system that monitors and controls home energy usage.",
+                    difficulty: "Hard",
+                    objectives: ["Monitor energy", "Show consumption", "Represent optimization"],
+                    code: `import turtle\nt = turtle.Turtle()\n\n# Draw power meter\nt.penup()\nt.goto(-80, 0)\nt.pendown()\nt.circle(40)\n\nt.penup()\nt.goto(-80, 40)\nt.pendown()\nt.goto(-80, -40)\n\n# Draw needle\nt.penup()\nt.goto(-80, 0)\nt.pendown()\nt.setheading(45)\nt.forward(30)\n\n# Draw solar panels\nt.penup()\nt.goto(50, 50)\nt.pendown()\nt.fillcolor("darkblue")\nt.begin_fill()\nfor _ in range(2):\n    t.forward(80)\n    t.left(90)\n    t.forward(40)\n    t.left(90)\nt.end_fill()\n\nt.write("SOLAR", align="center", font=("Arial", 8, "normal"))\n\n# Draw statistics\nt.penup()\nt.goto(-150, -80)\nt.pendown()\nt.write("Usage: 2.4 kW | Solar: 1.8 kW", font=("Arial", 10, "normal"))\n\nt.penup()\nt.goto(-150, -100)\nt.pendown()\nt.write("Net: 0.6 kW | Savings: 45%", font=("Arial", 10, "normal"))`,
+                    hint: "Create an energy monitoring system showing consumption and generation.",
+                    knowledge: "Smart energy systems monitor electricity usage and production from sources like solar panels. This data helps optimize consumption and reduce costs."
+                },
+                {
+                    id: 9,
+                    title: "Smart Home Hub",
+                    description: "Design a central hub that controls all IoT devices in a home.",
+                    difficulty: "Expert",
+                    objectives: ["Integrate systems", "Show connectivity", "Represent central control"],
+                    code: `import turtle\nt = turtle.Turtle()\n\n# Draw hub\nt.penup()\nt.goto(0, 0)\nt.pendown()\nt.fillcolor("lightblue")\nt.begin_fill()\nt.circle(30)\nt.end_fill()\n\nt.penup()\nt.goto(0, 10)\nt.pendown()\nt.write("HUB", align="center", font=("Arial", 10, "normal"))\n\n# Draw connected devices\ndevices = [\n    (-100, 80, "LIGHT", "yellow"),\n    (-100, 0, "LOCK", "green"),\n    (-100, -80, "THERM", "orange"),\n    (100, 80, "CAM", "red"),\n    (100, 0, "SENSOR", "purple"),\n    (100, -80, "SPKR", "cyan")\n]\n\nfor x, y, name, color in devices:\n    # Draw connection line\n    t.penup()\n    t.goto(0, 0)\n    t.pendown()\n    t.goto(x, y)\n    \n    # Draw device\n    t.penup()\n    t.goto(x, y-15)\n    t.pendown()\n    t.fillcolor(color)\n    t.begin_fill()\n    t.circle(15)\nt.end_fill()\n    \n    t.penup()\nt.goto(x, y-5)\n.t.pendown()\n.t.write(name, align="center", font=("Arial", 8, "normal"))\n\nt.penup()\nt.goto(-150, -150)\nt.pendown()\nt.write("Smart Home Network", font=("Arial", 12, "normal"))`,
+                    hint: "Create a central hub that connects to various IoT devices throughout the home.",
+                    knowledge: "Smart home hubs serve as central controllers for IoT devices. They coordinate communication between devices and provide unified control interfaces."
+                },
+                {
+                    id: 10,
+                    title: "IoT Innovation Challenge",
+                    description: "Create your own IoT system combining all the concepts you've learned!",
+                    difficulty: "Expert",
+                    objectives: ["Combine all skills", "Be creative", "Design an innovative IoT solution"],
+                    code: `import turtle\nt = turtle.Turtle()\nt.speed(0)\n\n# Create your own IoT system here!\n# Combine all the techniques you've learned\n\nt.penup()\nt.goto(-200, 150)\nt.pendown()\nt.write("MY SMART HOME SYSTEM", font=("Arial", 14, "bold"))\n\n# Example: Automated greenhouse\n\n# Draw greenhouse\nt.penup()\nt.goto(-100, -50)\nt.pendown()\nt.fillcolor("lightgreen")\nt.begin_fill()\nfor _ in range(2):\n    t.forward(200)\n    t.left(90)\n    t.forward(100)\n    t.left(90)\nt.end_fill()\n\n# Draw roof\nt.penup()\nt.goto(-100, 50)\nt.pendown()\nt.goto(0, 100)\nt.goto(100, 50)\n\n# Draw sensors and controls\nsensors = [\n    (-60, 0, "TEMP", "red"),\n    (0, 0, "HUMID", "blue"),\n    (60, 0, "LIGHT", "yellow"),\n    (-60, -30, "WATER", "cyan"),\n    (60, -30, "VENT", "orange")\n]\n\nfor x, y, name, color in sensors:\n    t.penup()\n    t.goto(x, y-10)\n    t.pendown()\n    t.fillcolor(color)\n    t.begin_fill()\n    t.circle(10)\nt.end_fill()\n    \n    t.penup()\n    t.goto(x, y-5)\n.t.pendown()\n.t.write(name, align="center", font=("Arial", 6, "normal"))\n\n# Draw central controller\nt.penup()\nt.goto(0, -80)\nt.pendown()\nt.fillcolor("lightblue")\nt.begin_fill()\nfor _ in range(2):\n    t.forward(60)\n    t.left(90)\n    t.forward(30)\n    t.left(90)\nt.end_fill()\n\nt.penup()\nt.goto(30, -70)\nt.pendown()\nt.write("CONTROLLER", align="center", font=("Arial", 8, "normal"))\n\nt.penup()\nt.goto(-150, -150)\nt.pendown()\nt.write("My Smart Greenhouse System", font=("Arial", 10, "normal"))`,
+                    hint: "Combine all the techniques you've learned to create your own innovative IoT system!",
+                    knowledge: "IoT innovation combines hardware, software, and networking to create smart solutions for everyday problems. The possibilities are endless!"
+                }
+            ]
+            // Other courses would follow the same pattern
+        };
+
+        // Extend the LevelSystem class to support course-specific levels
+        class CourseLevelSystem {
+            constructor(courseType) {
+                this.courseType = courseType;
+                this.levels = courseLevels[courseType] || courseLevels.games; // Default to games
+                this.currentLevel = 1;
+                this.unlockedLevels = [1];
+                this.completedLevels = [];
+                
+                this.loadProgress();
+            }
+            
+            getCurrentLevel() {
+                return this.levels.find(level => level.id === this.currentLevel);
+            }
+            
+            getNextLevel() {
+                if (this.currentLevel < this.levels.length) {
+                    return this.levels.find(level => level.id === this.currentLevel + 1);
+                }
+                return null;
+            }
+            
+            getPrevLevel() {
+                if (this.currentLevel > 1) {
+                    return this.levels.find(level => level.id === this.currentLevel - 1);
+                }
+                return null;
+            }
+            
+            goToLevel(levelId) {
+                if (this.isLevelUnlocked(levelId)) {
+                    this.currentLevel = levelId;
+                    this.saveProgress();
+                    return true;
+                }
+                return false;
+            }
+            
+            isLevelUnlocked(levelId) {
+                return this.unlockedLevels.includes(levelId);
+            }
+            
+            isLevelCompleted(levelId) {
+                return this.completedLevels.includes(levelId);
+            }
+            
+            completeCurrentLevel() {
+                if (!this.isLevelCompleted(this.currentLevel)) {
+                    this.completedLevels.push(this.currentLevel);
+                    
+                    // Unlock next level if it exists
+                    if (this.currentLevel < this.levels.length) {
+                        const nextLevelId = this.currentLevel + 1;
+                        if (!this.isLevelUnlocked(nextLevelId)) {
+                            this.unlockedLevels.push(nextLevelId);
+                        }
+                    }
+                    
+                    this.saveProgress();
+                    return true;
+                }
+                return false;
+            }
+            
+            getCompletionPercentage() {
+                return (this.completedLevels.length / this.levels.length) * 100;
+            }
+            
+            getStats() {
+                return {
+                    totalLevels: this.levels.length,
+                    completedLevels: this.completedLevels.length,
+                    unlockedLevels: this.unlockedLevels.length,
+                    completionPercentage: this.getCompletionPercentage(),
+                    currentLevel: this.currentLevel
+                };
+            }
+            
+            saveProgress() {
+                // Load existing user data
+                const userData = JSON.parse(localStorage.getItem('pythonAdventuresUser') || '{}');
+                
+                if (!userData.courses) {
+                    userData.courses = {};
+                }
+                
+                if (!userData.courses[this.courseType]) {
+                    userData.courses[this.courseType] = {
+                        started: new Date().toISOString(),
+                        progress: 0,
+                        levels: {}
+                    };
+                }
+                
+                // Update course progress
+                userData.courses[this.courseType].levels = {
+                    currentLevel: this.currentLevel,
+                    unlockedLevels: this.unlockedLevels,
+                    completedLevels: this.completedLevels
+                };
+                
+                localStorage.setItem('pythonAdventuresUser', JSON.stringify(userData));
+            }
+            
+            loadProgress() {
+                // Load existing user data
+                const userData = JSON.parse(localStorage.getItem('pythonAdventuresUser') || '{}');
+                
+                if (userData.courses && userData.courses[this.courseType]) {
+                    const courseProgress = userData.courses[this.courseType].levels || {};
+                    this.currentLevel = courseProgress.currentLevel || 1;
+                    this.unlockedLevels = courseProgress.unlockedLevels || [1];
+                    this.completedLevels = courseProgress.completedLevels || [];
+                } else {
+                    // Default starting state
+                    this.currentLevel = 1;
+                    this.unlockedLevels = [1];
+                    this.completedLevels = [];
+                }
+            }
+            
+            resetProgress() {
+                this.currentLevel = 1;
+                this.unlockedLevels = [1];
+                this.completedLevels = [];
+                this.saveProgress();
+            }
+        }
+
+        // Main application logic for course pages
+        class CoursePlatform {
+            constructor(courseType) {
+                this.courseType = courseType;
+                this.levelSystem = new CourseLevelSystem(courseType);
+                this.canvasRenderer = new CanvasRenderer('game-canvas');
+                this.debugger = new Debugger('output-content');
+                
+                this.currentLevel = 1;
+                this.codeEditor = document.getElementById('code-editor');
+                this.runButton = document.getElementById('run-btn');
+                this.resetButton = document.getElementById('reset-btn');
+                this.hintButton = document.getElementById('hint-btn');
+                this.knowledgeButton = document.getElementById('knowledge-btn');
+                this.outputContent = document.getElementById('output-content');
+                this.gameCanvas = document.getElementById('game-canvas');
+                this.ctx = this.gameCanvas.getContext('2d');
+                this.currentCode = '';
+                
+                this.init();
+            }
+            
+            init() {
+                // Update header based on course
+                this.updateCourseHeader();
+                
+                // Load current level
+                this.loadLevel(this.levelSystem.getCurrentLevel().id);
+                
+                // Set up event listeners
+                this.runButton.addEventListener('click', () => this.runCode());
+                this.resetButton.addEventListener('click', () => this.resetCode());
+                this.hintButton.addEventListener('click', () => this.showHint());
+                this.knowledgeButton.addEventListener('click', () => this.showKnowledge());
+                
+                document.getElementById('prev-level').addEventListener('click', () => this.prevLevel());
+                document.getElementById('next-level').addEventListener('click', () => this.nextLevel());
+                
+                // Load saved progress
+                this.loadProgress();
+            }
+            
+            updateCourseHeader() {
+                // This would be updated based on the specific course
+                const courseTitles = {
+                    games: "🎮 Build Games",
+                    space: "🚀 Build Space Apps", 
+                    iot: "🏠 Build Remote Control Apps"
+                };
+                
+                document.querySelector('.course-header h2').textContent = courseTitles[this.courseType] || "Python Adventures";
+            }
+            
+            loadLevel(levelId) {
+                const level = this.levelSystem.levels.find(lvl => lvl.id === levelId);
+                if (level) {
+                    this.codeEditor.value = level.code;
+                    document.getElementById('level-title').textContent = level.title;
+                    document.getElementById('level-description').textContent = level.description;
+                    document.getElementById('current-level').textContent = `${level.id}/${this.levelSystem.levels.length}`;
+                    this.currentLevel = level.id;
+                    
+                    // Update progress bar
+                    const progressPercent = this.levelSystem.getCompletionPercentage();
+                    document.getElementById('progress-fill').style.width = `${progressPercent}%`;
+                    
+                    // Update total levels display
+                    document.querySelector('.level-indicator').innerHTML = `Level: <span id="current-level">${level.id}</span>/${this.levelSystem.levels.length}`;
+                }
+            }
+            
+            runCode() {
+                // Clear previous output
+                this.outputContent.textContent = '';
+                this.canvasRenderer.reset(); // Use the canvas renderer to reset the canvas
+                
+                // Get the code from editor
+                const code = this.codeEditor.value;
+                
+                try {
+                    // Set up Skulpt output handling
+                    var builtinRead = function (filename) {
+                        if (Sk.builtinFiles === undefined || Sk.builtinFiles.files[filename] === undefined)
+                            throw "File not found: '" + filename + "'";
+                        return Sk.builtinFiles.files[filename];
+                    };
+                    
+                    // Set up output and error handling
+                    Sk.pre = "output-content";
+                    Sk.configure({
+                        output: (text) => {
+                            this.outputContent.textContent += text;
+                        },
+                        read: builtinRead,
+                        inputfun: () => {
+                            return window.prompt("Enter input:");
+                        },
+                        inputfunTakesPrompt: true
+                    });
+                    
+                    // Run the Python code
+                    var prog = Sk.misceval.asyncToPromise(() => 
+                        Sk.importMainWithBody("<stdin>", false, code, true)
+                    );
+                    
+                    // Handle successful execution
+                    prog.then(() => {
+                        console.log("Python program executed successfully");
+                        // Mark level as completed if not already marked
+                        if (!this.levelSystem.isLevelCompleted(this.currentLevel)) {
+                            this.levelSystem.completeCurrentLevel();
+                            this.updateProgressBar();
+                            
+                            // Show completion message
+                            setTimeout(() => {
+                                if (confirm("Great job! You completed this level! Move to the next one?")) {
+                                    this.nextLevel();
+                                }
+                            }, 1000);
+                        }
+                    }).catch((err) => {
+                        this.debugger.displayError(err.toString());
+                    });
+                    
+                } catch (error) {
+                    this.debugger.displayError("Execution error: " + error.message);
+                }
+            }
+            
+            resetCode() {
+                if (confirm("Are you sure you want to reset the code?")) {
+                    this.loadLevel(this.currentLevel);
+                }
+            }
+            
+            showHint() {
+                const level = this.levelSystem.levels.find(lvl => lvl.id === this.currentLevel);
+                if (level) {
+                    alert(`Hint: ${level.hint}`);
+                }
+            }
+            
+            showKnowledge() {
+                const level = this.levelSystem.levels.find(lvl => lvl.id === this.currentLevel);
+                if (level && level.knowledge) {
+                    const knowledgePanel = document.getElementById('knowledge-panel');
+                    const knowledgeContent = document.getElementById('knowledge-content');
+                    
+                    knowledgeContent.textContent = level.knowledge;
+                    
+                    // Show relevant resources based on course
+                    this.showCourseResources();
+                    
+                    knowledgePanel.style.display = 'block';
+                } else {
+                    alert("No additional knowledge content available for this level.");
+                }
+            }
+            
+            showCourseResources() {
+                const resourcesContainer = document.getElementById('resources-container');
+                resourcesContainer.innerHTML = '';
+                
+                // Create resource links based on course type
+                const resources = {
+                    games: [
+                        {name: "Pygame Tutorial", url: "#"},
+                        {name: "Game Development Basics", url: "#"},
+                        {name: "Turtle Graphics Guide", url: "#"}
+                    ],
+                    space: [
+                        {name: "Astropy Documentation", url: "#"},
+                        {name: "Space Data Visualization", url: "#"},
+                        {name: "Astronomy with Python", url: "#"}
+                    ],
+                    iot: [
+                        {name: "IoT with Python", url: "#"},
+                        {name: "Hardware Control Guide", url: "#"},
+                        {name: "Raspberry Pi Projects", url: "#"}
+                    ]
+                };
+                
+                if (resources[this.courseType]) {
+                    resources[this.courseType].forEach(resource => {
+                        const link = document.createElement('a');
+                        link.href = resource.url;
+                        link.className = 'resource-link';
+                        link.textContent = resource.name;
+                        link.target = '_blank';
+                        resourcesContainer.appendChild(link);
+                    });
+                }
+            }
+            
+            prevLevel() {
+                const prevLevel = this.levelSystem.getPrevLevel();
+                if (prevLevel) {
+                    this.loadLevel(prevLevel.id);
+                }
+            }
+            
+            nextLevel() {
+                const nextLevel = this.levelSystem.getNextLevel();
+                if (nextLevel && this.levelSystem.isLevelUnlocked(nextLevel.id)) {
+                    this.loadLevel(nextLevel.id);
+                } else if (!nextLevel) {
+                    alert("Congratulations! You've completed all levels in this course!");
+                } else {
+                    alert("Next level is not unlocked yet. Complete the current level first!");
+                }
+            }
+            
+            updateProgressBar() {
+                const progressPercent = this.levelSystem.getCompletionPercentage();
+                document.getElementById('progress-fill').style.width = `${progressPercent}%`;
+            }
+            
+            loadProgress() {
+                // Progress is handled by the LevelSystem
+                this.levelSystem.loadProgress();
+                this.loadLevel(this.levelSystem.currentLevel);
+            }
+            
+            saveProgress() {
+                this.levelSystem.saveProgress();
+            }
+        }
+
+        // Initialize the app when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get course type from URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const courseType = urlParams.get('course') || 'games'; // Default to games
+            
+            // Initialize the course platform
+            window.courseApp = new CoursePlatform(courseType);
+        });
+
+        // Include the existing canvas renderer and debugger classes here
+        // (Same as in the original files)
+    </script>
+    <script>
+        // Canvas Renderer Class (copied from original)
+        class CanvasRenderer {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.reset();
+            }
+            
+            reset() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Reset turtle state
+                this.x = this.canvas.width / 2;
+                this.y = this.canvas.height / 2;
+                this.angle = 0; // facing right initially
+                this.isPenDown = true;
+                this.color = '#000000';
+                this.lineWidth = 2;
+            }
+            
+            // Move the turtle forward by a certain distance
+            forward(distance) {
+                const startX = this.x;
+                const startY = this.y;
+                
+                // Calculate new position
+                this.x += Math.cos(this.radians()) * distance;
+                this.y -= Math.sin(this.radians()) * distance; // Subtract because y increases downward
+                
+                // Draw line if pen is down
+                if (this.isPenDown) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(startX, startY);
+                    this.ctx.lineTo(this.x, this.y);
+                    this.ctx.strokeStyle = this.color;
+                    this.ctx.lineWidth = this.lineWidth;
+                    this.ctx.stroke();
+                }
+            }
+            
+            // Turn the turtle right by specified angle
+            right(angle) {
+                this.angle += angle;
+            }
+            
+            // Turn the turtle left by specified angle
+            left(angle) {
+                this.angle -= angle;
+            }
+            
+            // Move to specific coordinates without drawing
+            goTo(x, y) {
+                this.x = x;
+                this.y = y;
+            }
+            
+            // Pen up - stop drawing
+            penUp() {
+                this.isPenDown = false;
+            }
+            
+            // Pen down - start drawing
+            penDown() {
+                this.isPenDown = true;
+            }
+            
+            // Set pen color
+            setColor(color) {
+                this.color = color;
+            }
+            
+            // Set line width
+            setLineWidth(width) {
+                this.lineWidth = width;
+            }
+            
+            // Get current angle in radians
+            radians() {
+                return this.angle * Math.PI / 180;
+            }
+            
+            // Draw a circle
+            circle(radius) {
+                if (this.isPenDown) {
+                    this.ctx.beginPath();
+                    this.ctx.arc(this.x, this.y, radius, 0, 2 * Math.PI);
+                    this.ctx.strokeStyle = this.color;
+                    this.ctx.lineWidth = this.lineWidth;
+                    this.ctx.stroke();
+                }
+            }
+            
+            // Set turtle position relative to center
+            setPos(x, y) {
+                this.x = this.canvas.width / 2 + x;
+                this.y = this.canvas.height / 2 - y; // Subtract y because canvas y increases downward
+            }
+        }
+
+        // Debugger Class (copied from original)
+        class Debugger {
+            constructor(outputElementId) {
+                this.outputElement = document.getElementById(outputElementId);
+                this.errorPatterns = [
+                    { pattern: /SyntaxError/gi, message: "Check your syntax - did you forget a colon, parenthesis, or indent properly?" },
+                    { pattern: /IndentationError/gi, message: "Check your indentation - Python cares about spaces at the beginning of lines!" },
+                    { pattern: /NameError/gi, message: "You're trying to use a variable or function that hasn't been defined yet." },
+                    { pattern: /TypeError/gi, message: "You're trying to perform an operation on incompatible types (like adding a number to text)." },
+                    { pattern: /AttributeError/gi, message: "You're trying to access a property or method that doesn't exist on this object." },
+                    { pattern: /ValueError/gi, message: "The value you provided isn't valid for this operation." },
+                    { pattern: /ZeroDivisionError/gi, message: "You can't divide by zero - math doesn't allow it!" }
+                ];
+            }
+            
+            parseError(errorText) {
+                let friendlyMessage = "Something went wrong with your code:\n" + errorText + "\n\n";
+                
+                // Look for known error patterns
+                for (const errorPattern of this.errorPatterns) {
+                    if (errorPattern.pattern.test(errorText)) {
+                        friendlyMessage += "💡 Hint: " + errorPattern.message;
+                        break;
+                    }
+                }
+                
+                if (friendlyMessage === "Something went wrong with your code:\n" + errorText + "\n\n") {
+                    friendlyMessage += "💡 General Hint: Check for typos, missing punctuation, or incorrect function names.";
+                }
+                
+                return friendlyMessage;
+            }
+            
+            displayError(errorText) {
+                this.outputElement.textContent = this.parseError(errorText);
+                this.outputElement.style.color = "#e74c3c";
+            }
+            
+            displaySuccess(message) {
+                this.outputElement.textContent = message;
+                this.outputElement.style.color = "#27ae60";
+            }
+            
+            displayInfo(message) {
+                this.outputElement.textContent = message;
+                this.outputElement.style.color = "#3498db";
+            }
+        }
+    </script>
+</body>
+</html>
