@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Adventures - Choose Your Path</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Additional styles for landing page */
+        .course-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .course-card {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .course-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+        
+        .course-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        
+        .course-title {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .course-description {
+            margin-bottom: 15px;
+            flex-grow: 1;
+        }
+        
+        .course-btn {
+            background-color: #FFD700;
+            color: #2c3e50;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        .course-btn:hover {
+            background-color: #FFC000;
+        }
+        
+        .welcome-section {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            margin-bottom: 30px;
+            border-radius: 15px;
+        }
+        
+        .welcome-section h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+        
+        .welcome-section p {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .auth-section {
+            background-color: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .form-group label {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .form-group input {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .auth-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .auth-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .login-btn {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .register-btn {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .user-greeting {
+            text-align: center;
+            padding: 20px;
+            background-color: #e8f4fd;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .user-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐍 Python Adventures</h1>
+            <p>Learn Python through fun and engaging activities!</p>
+        </header>
+
+        <div class="user-greeting" id="userGreeting" style="display: none;">
+            <h2>Welcome back, <span id="userName">Student</span>!</h2>
+            <p>Your Python journey continues...</p>
+            <div class="user-controls">
+                <button id="logoutBtn" class="secondary-btn">Logout</button>
+                <button id="continueLearningBtn" class="primary-btn">Continue Learning</button>
+            </div>
+        </div>
+
+        <div class="auth-section" id="authSection">
+            <h2 id="authTitle">Welcome! Please Log In or Register</h2>
+            <form class="auth-form" id="authForm">
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" required>
+                </div>
+                <div class="form-group" id="confirmPasswordGroup" style="display: none;">
+                    <label for="confirmPassword">Confirm Password:</label>
+                    <input type="password" id="confirmPassword">
+                </div>
+                <div class="auth-buttons">
+                    <button type="submit" class="auth-btn login-btn" id="authSubmitBtn">Login</button>
+                </div>
+                <button type="button" class="secondary-btn" id="toggleAuthMode" style="margin-top: 10px;">Need an account? Register</button>
+            </form>
+        </div>
+
+        <div class="welcome-section">
+            <h1>Choose Your Python Adventure</h1>
+            <p>Select a learning track that interests you. Each path offers unique challenges and projects to build your Python skills!</p>
+        </div>
+
+        <div class="course-grid">
+            <div class="course-card" onclick="selectCourse('games')">
+                <div>
+                    <div class="course-icon">🎮</div>
+                    <h3 class="course-title">Build Games</h3>
+                    <p class="course-description">Learn Python by creating fun games with Pygame, animations, and interactive elements.</p>
+                </div>
+                <button class="course-btn">Start Game Dev</button>
+            </div>
+
+            <div class="course-card" onclick="selectCourse('space')">
+                <div>
+                    <div class="course-icon">🚀</div>
+                    <h3 class="course-title">Space Apps</h3>
+                    <p class="course-description">Explore the cosmos by building space simulations, planetariums, and astronomy tools.</p>
+                </div>
+                <button class="course-btn">Start Space Journey</button>
+            </div>
+
+            <div class="course-card" onclick="selectCourse('iot')">
+                <div>
+                    <div class="course-icon">🏠</div>
+                    <h3 class="course-title">Home Automation</h3>
+                    <p class="course-description">Control real hardware at home with Python - lights, sensors, robots, and more!</p>
+                </div>
+                <button class="course-btn">Start IoT Projects</button>
+            </div>
+
+            <div class="course-card" onclick="selectCourse('web')">
+                <div>
+                    <div class="course-icon">🌐</div>
+                    <h3 class="course-title">Web Development</h3>
+                    <p class="course-description">Build websites and web applications using Python frameworks like Flask and Django.</p>
+                </div>
+                <button class="course-btn">Start Web Dev</button>
+            </div>
+
+            <div class="course-card" onclick="selectCourse('data')">
+                <div>
+                    <div class="course-icon">📊</div>
+                    <h3 class="course-title">Data Science</h3>
+                    <p class="course-description">Analyze data, create visualizations, and discover insights with Python libraries.</p>
+                </div>
+                <button class="course-btn">Start Data Journey</button>
+            </div>
+
+            <div class="course-card" onclick="selectCourse('ai')">
+                <div>
+                    <div class="course-icon">🤖</div>
+                    <h3 class="course-title">AI & Machine Learning</h3>
+                    <p class="course-description">Learn the basics of artificial intelligence and machine learning with Python.</p>
+                </div>
+                <button class="course-btn">Start AI Path</button>
+            </div>
+        </div>
+
+        <footer>
+            <p>Made with ❤️ for young programmers | All code runs safely in your browser</p>
+        </footer>
+    </div>
+
+    <script>
+        // Authentication state
+        let currentUser = null;
+        
+        // DOM Elements
+        const authSection = document.getElementById('authSection');
+        const userGreeting = document.getElementById('userGreeting');
+        const userNameSpan = document.getElementById('userName');
+        const authForm = document.getElementById('authForm');
+        const authTitle = document.getElementById('authTitle');
+        const authSubmitBtn = document.getElementById('authSubmitBtn');
+        const toggleAuthMode = document.getElementById('toggleAuthMode');
+        const confirmPasswordGroup = document.getElementById('confirmPasswordGroup');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const continueLearningBtn = document.getElementById('continueLearningBtn');
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', () => {
+            checkUserSession();
+            setupEventListeners();
+        });
+        
+        function setupEventListeners() {
+            authForm.addEventListener('submit', handleAuthSubmit);
+            toggleAuthMode.addEventListener('click', toggleAuthModeHandler);
+            logoutBtn.addEventListener('click', logout);
+            continueLearningBtn.addEventListener('click', () => {
+                if (currentUser && currentUser.lastCourse) {
+                    selectCourse(currentUser.lastCourse);
+                } else {
+                    // Default to games course if no previous course selected
+                    selectCourse('games');
+                }
+            });
+        }
+        
+        function checkUserSession() {
+            const userData = localStorage.getItem('pythonAdventuresUser');
+            if (userData) {
+                currentUser = JSON.parse(userData);
+                showUserGreeting();
+            } else {
+                showAuthSection();
+            }
+        }
+        
+        function showUserGreeting() {
+            authSection.style.display = 'none';
+            userGreeting.style.display = 'block';
+            userNameSpan.textContent = currentUser.username;
+        }
+        
+        function showAuthSection() {
+            authSection.style.display = 'block';
+            userGreeting.style.display = 'none';
+        }
+        
+        function handleAuthSubmit(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (isRegisterMode) {
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                
+                if (password !== confirmPassword) {
+                    alert('Passwords do not match!');
+                    return;
+                }
+                
+                registerUser(username, password);
+            } else {
+                loginUser(username, password);
+            }
+        }
+        
+        function registerUser(username, password) {
+            // Simple client-side validation
+            if (username.length < 3) {
+                alert('Username must be at least 3 characters long');
+                return;
+            }
+            
+            if (password.length < 6) {
+                alert('Password must be at least 6 characters long');
+                return;
+            }
+            
+            // Check if user already exists
+            const users = JSON.parse(localStorage.getItem('pythonAdventuresUsers') || '{}');
+            if (users[username]) {
+                alert('Username already exists. Please choose another one.');
+                return;
+            }
+            
+            // Store user (in a real app, this would be hashed)
+            users[username] = {
+                password: password, // In a real app, this should be properly hashed
+                joinDate: new Date().toISOString(),
+                courses: {},
+                achievements: []
+            };
+            
+            localStorage.setItem('pythonAdventuresUsers', JSON.stringify(users));
+            
+            // Login the new user
+            loginUser(username, password);
+        }
+        
+        function loginUser(username, password) {
+            const users = JSON.parse(localStorage.getItem('pythonAdventuresUsers') || '{}');
+            const user = users[username];
+            
+            if (!user) {
+                alert('User not found. Would you like to register?');
+                toggleToRegister();
+                return;
+            }
+            
+            if (user.password !== password) {
+                alert('Incorrect password');
+                return;
+            }
+            
+            // Successful login
+            currentUser = {
+                username: username,
+                ...user
+            };
+            
+            localStorage.setItem('pythonAdventuresUser', JSON.stringify(currentUser));
+            showUserGreeting();
+            
+            // Reset form
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('confirmPassword').value = '';
+        }
+        
+        function logout() {
+            localStorage.removeItem('pythonAdventuresUser');
+            currentUser = null;
+            showAuthSection();
+        }
+        
+        // Auth mode toggle
+        let isRegisterMode = false;
+        
+        function toggleAuthModeHandler() {
+            isRegisterMode = !isRegisterMode;
+            updateAuthMode();
+        }
+        
+        function toggleToRegister() {
+            isRegisterMode = true;
+            updateAuthMode();
+        }
+        
+        function updateAuthMode() {
+            if (isRegisterMode) {
+                authTitle.textContent = 'Create Your Account';
+                authSubmitBtn.textContent = 'Register';
+                confirmPasswordGroup.style.display = 'block';
+                toggleAuthMode.textContent = 'Already have an account? Login';
+            } else {
+                authTitle.textContent = 'Welcome Back! Please Log In';
+                authSubmitBtn.textContent = 'Login';
+                confirmPasswordGroup.style.display = 'none';
+                toggleAuthMode.textContent = 'Need an account? Register';
+            }
+        }
+        
+        // Course selection
+        function selectCourse(courseType) {
+            if (!currentUser) {
+                alert('Please log in first to access courses!');
+                return;
+            }
+            
+            // Save the selected course for this user
+            if (!currentUser.courses) {
+                currentUser.courses = {};
+            }
+            currentUser.courses[courseType] = currentUser.courses[courseType] || {
+                started: new Date().toISOString(),
+                progress: 0,
+                levels: {}
+            };
+            currentUser.lastCourse = courseType;
+            
+            localStorage.setItem('pythonAdventuresUser', JSON.stringify(currentUser));
+            
+            // Redirect to appropriate course page
+            switch(courseType) {
+                case 'games':
+                    window.location.href = 'courses/games.html';
+                    break;
+                case 'space':
+                    window.location.href = 'courses/space.html';
+                    break;
+                case 'iot':
+                    window.location.href = 'courses/iot.html';
+                    break;
+                case 'web':
+                    window.location.href = 'courses/web.html';
+                    break;
+                case 'data':
+                    window.location.href = 'courses/data.html';
+                    break;
+                case 'ai':
+                    window.location.href = 'courses/ai.html';
+                    break;
+                default:
+                    window.location.href = 'courses/default.html';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -22,24 +22,29 @@ body {
     overflow: hidden;
 }
 
-/* Header Styles */
+/* Header Styles - Duolingo/Minecraft inspired */
 header {
-    background: linear-gradient(to right, #4CAF50, #45a049);
+    background: linear-gradient(to right, #58cc02, #3aa500);
     color: white;
-    padding: 20px;
-    text-align: center;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 header h1 {
-    font-size: 2.5rem;
-    margin-bottom: 15px;
+    font-size: 2.2rem;
+    margin: 0;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .progress-container {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 15px;
     flex-wrap: wrap;
 }
@@ -47,21 +52,26 @@ header h1 {
 .level-indicator {
     font-weight: bold;
     font-size: 1.1rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 5px 12px;
+    border-radius: 20px;
 }
 
 .progress-bar {
-    width: 200px;
-    height: 20px;
+    width: 180px;
+    height: 12px;
     background-color: rgba(255, 255, 255, 0.3);
     border-radius: 10px;
     overflow: hidden;
+    position: relative;
 }
 
 .progress-fill {
     height: 100%;
-    background-color: #FFD700;
+    background: linear-gradient(to right, #ffd700, #ffed4e);
     width: 10%;
-    transition: width 0.3s ease;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 
 /* Main Content Layout */
@@ -85,10 +95,16 @@ header h1 {
     align-items: center;
     flex-wrap: wrap;
     gap: 10px;
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 10px;
+    border-left: 4px solid #3498db;
 }
 
 .editor-header h2 {
     color: #2c3e50;
+    font-size: 1.4rem;
+    margin: 0;
 }
 
 .level-navigation {
@@ -97,45 +113,56 @@ header h1 {
     gap: 10px;
 }
 
-.nav-btn, .primary-btn, .secondary-btn {
-    padding: 10px 15px;
+.nav-btn, .primary-btn, .secondary-btn, .secondary-btn {
+    padding: 10px 18px;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
     cursor: pointer;
     font-weight: bold;
     transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .nav-btn {
-    background-color: #3498db;
+    background: linear-gradient(to bottom, #3498db, #2980b9);
     color: white;
 }
 
 .primary-btn {
-    background-color: #e74c3c;
+    background: linear-gradient(to bottom, #e74c3c, #c0392b);
     color: white;
 }
 
 .secondary-btn {
-    background-color: #95a5a6;
+    background: linear-gradient(to bottom, #95a5a6, #7f8c8d);
     color: white;
 }
 
 .nav-btn:hover, .primary-btn:hover, .secondary-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
 #code-editor {
     width: 100%;
     height: 250px;
     padding: 15px;
-    font-family: 'Courier New', monospace;
+    font-family: 'Fira Code', 'Courier New', monospace;
     font-size: 16px;
-    border: 2px solid #ddd;
-    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
     resize: vertical;
     background-color: #f8f9fa;
+    transition: border-color 0.3s;
+}
+
+#code-editor:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
 }
 
 .editor-controls {
@@ -146,26 +173,32 @@ header h1 {
 
 .debug-panel {
     background-color: #f8f9fa;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
     padding: 15px;
     flex-grow: 1;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .debug-panel h3 {
     margin-bottom: 10px;
     color: #2c3e50;
+    font-size: 1.1rem;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 5px;
 }
 
 #output-content {
-    background-color: #000;
-    color: #0f0;
-    padding: 10px;
-    border-radius: 5px;
-    font-family: 'Courier New', monospace;
+    background-color: #2c3e50;
+    color: #2ecc71;
+    padding: 12px;
+    border-radius: 8px;
+    font-family: 'Fira Code', 'Courier New', monospace;
     white-space: pre-wrap;
     max-height: 150px;
     overflow-y: auto;
+    font-size: 14px;
+    line-height: 1.4;
 }
 
 /* Canvas Section */
@@ -178,30 +211,36 @@ header h1 {
 .canvas-section h2 {
     color: #2c3e50;
     text-align: center;
+    font-size: 1.4rem;
+    margin: 0;
 }
 
 .canvas-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #f8f9fa;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    padding: 10px;
+    background: linear-gradient(145deg, #f0f0f0, #e0e0e0);
+    border: 3px solid #d0d0d0;
+    border-radius: 12px;
+    padding: 15px;
     min-height: 400px;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 #game-canvas {
-    border: 1px solid #ccc;
+    border: 1px solid #c0c0c0;
     background-color: white;
+    border-radius: 8px;
 }
 
 .level-description {
     text-align: center;
-    padding: 10px;
-    background-color: #e8f4fd;
-    border-radius: 8px;
+    padding: 12px;
+    background: linear-gradient(to right, #e8f4fd, #d1e7ff);
+    border-radius: 10px;
     font-style: italic;
+    border: 1px solid #b8daff;
+    color: #0c2461;
 }
 
 /* Footer */
@@ -211,6 +250,7 @@ footer {
     text-align: center;
     padding: 15px;
     font-size: 0.9rem;
+    background: linear-gradient(to right, #3498db, #2c3e50);
 }
 
 /* Mobile Responsiveness */
@@ -222,14 +262,21 @@ footer {
     .editor-header {
         flex-direction: column;
         text-align: center;
+        align-items: stretch;
+    }
+    
+    header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
     }
     
     header h1 {
-        font-size: 2rem;
+        font-size: 1.8rem;
     }
     
     .progress-container {
-        flex-direction: column;
+        justify-content: center;
     }
     
     .level-navigation {
@@ -250,6 +297,8 @@ footer {
     .nav-btn, .primary-btn, .secondary-btn {
         padding: 8px 12px;
         font-size: 0.9rem;
+        width: 100%;
+        justify-content: center;
     }
     
     #code-editor {
@@ -261,6 +310,10 @@ footer {
     .canvas-container {
         min-height: 300px;
     }
+    
+    .editor-controls {
+        flex-direction: column;
+    }
 }
 
 /* Animations */
@@ -270,6 +323,51 @@ footer {
     100% { transform: scale(1); }
 }
 
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+    100% { transform: translateY(0px); }
+}
+
 .primary-btn:active {
     animation: pulse 0.2s ease;
+}
+
+/* Minecraft/Duolingo styling elements */
+.duo-card {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.duo-card:hover {
+    transform: translateY(-5px);
+}
+
+.xp-badge {
+    display: inline-block;
+    background: linear-gradient(to right, #ffd700, #ffa500);
+    color: #2c3e50;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 0.8rem;
+    margin-left: 5px;
+}
+
+.btn-success {
+    background: linear-gradient(to bottom, #2ecc71, #27ae60);
+    color: white;
+}
+
+.btn-warning {
+    background: linear-gradient(to bottom, #f39c12, #e67e22);
+    color: white;
+}
+
+.btn-danger {
+    background: linear-gradient(to bottom, #e74c3c, #c0392b);
+    color: white;
 }

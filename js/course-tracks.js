@@ -1,11 +1,45 @@
-// Level progression system
-// This class is now extended in main-enhanced.js to support multiple course tracks
-// The original implementation is preserved here for backward compatibility
-
-class LevelSystem {
+// Course tracks system
+class CourseTracks {
     constructor() {
-        // For backward compatibility, default to the original games track
-        this.levels = [
+        this.tracks = {
+            games: {
+                id: 'games',
+                title: '🎮 Games Track',
+                description: 'Learn Python by creating fun games!',
+                color: '#3498db',
+                levels: []
+            },
+            space: {
+                id: 'space',
+                title: '🚀 Space Apps',
+                description: 'Build applications for space exploration!',
+                color: '#9b59b6',
+                levels: []
+            },
+            hardware: {
+                id: 'hardware',
+                title: '🔧 Hardware Control',
+                description: 'Control hardware devices with Python!',
+                color: '#e67e22',
+                levels: []
+            },
+            web: {
+                id: 'web',
+                title: '🌐 Web Development',
+                description: 'Create websites and web applications!',
+                color: '#2ecc71',
+                levels: []
+            }
+        };
+        
+        // Initialize levels for each track
+        this.initializeTracks();
+        this.setupEventListeners();
+    }
+    
+    initializeTracks() {
+        // Games track - based on original levels
+        this.tracks.games.levels = [
             {
                 id: 1,
                 title: "Drawing a Square",
@@ -208,120 +242,153 @@ my_art()`,
             }
         ];
         
-        this.currentLevel = 1;
-        this.unlockedLevels = [1]; // Initially only level 1 is unlocked
-        this.completedLevels = [];
+        // Space apps track
+        this.tracks.space.levels = [
+            {
+                id: 1,
+                title: "Rocket Trajectory",
+                description: "Calculate rocket trajectory using physics formulas.",
+                difficulty: "Beginner",
+                objectives: ["Use variables for speed", "Calculate distance"],
+                code: `import turtle
+t = turtle.Turtle()
+t.speed(0)
+
+# Rocket trajectory simulation
+altitude = 0
+velocity = 10
+
+for step in range(50):
+    altitude += velocity
+    velocity -= 0.5  # Gravity effect
+    
+    t.goto(step * 10, altitude)
+    
+    if altitude <= 0:
+        print(f"Rocket landed after {step} steps")
+        break`,
+                hint: "Track position and velocity separately.",
+                completed: false,
+                xp: 10
+            },
+            {
+                id: 2,
+                title: "Orbit Simulation",
+                description: "Simulate planetary orbits around a star.",
+                difficulty: "Easy",
+                objectives: ["Use circular motion", "Apply trigonometry"],
+                code: `import turtle
+import math
+
+t = turtle.Turtle()
+t.speed(0)
+
+star_x, star_y = 0, 0
+
+# Planet orbit
+for angle in range(0, 360, 5):
+    rad = math.radians(angle)
+    planet_x = star_x + 100 * math.cos(rad)
+    planet_y = star_y + 100 * math.sin(rad)
+    
+    t.goto(planet_x, planet_y)`,
+                hint: "Use cosine and sine functions for circular motion.",
+                completed: false,
+                xp: 15
+            },
+            // Additional space levels would go here...
+        ];
         
-        this.loadProgress();
-    }
-    
-    getCurrentLevel() {
-        return this.levels.find(level => level.id === this.currentLevel);
-    }
-    
-    getNextLevel() {
-        if (this.currentLevel < this.levels.length) {
-            return this.levels.find(level => level.id === this.currentLevel + 1);
-        }
-        return null;
-    }
-    
-    getPrevLevel() {
-        if (this.currentLevel > 1) {
-            return this.levels.find(level => level.id === this.currentLevel - 1);
-        }
-        return null;
-    }
-    
-    goToLevel(levelId) {
-        if (this.isLevelUnlocked(levelId)) {
-            this.currentLevel = levelId;
-            this.saveProgress();
-            return true;
-        }
-        return false;
-    }
-    
-    isLevelUnlocked(levelId) {
-        return this.unlockedLevels.includes(levelId);
-    }
-    
-    isLevelCompleted(levelId) {
-        return this.completedLevels.includes(levelId);
-    }
-    
-    completeCurrentLevel() {
-        if (!this.isLevelCompleted(this.currentLevel)) {
-            this.completedLevels.push(this.currentLevel);
-            
-            // Unlock next level if it exists
-            if (this.currentLevel < this.levels.length) {
-                const nextLevelId = this.currentLevel + 1;
-                if (!this.isLevelUnlocked(nextLevelId)) {
-                    this.unlockedLevels.push(nextLevelId);
-                }
-            }
-            
-            this.saveProgress();
-            return true;
-        }
-        return false;
-    }
-    
-    getCompletionPercentage() {
-        return (this.completedLevels.length / this.levels.length) * 100;
-    }
-    
-    getStats() {
-        return {
-            totalLevels: this.levels.length,
-            completedLevels: this.completedLevels.length,
-            unlockedLevels: this.unlockedLevels.length,
-            completionPercentage: this.getCompletionPercentage(),
-            currentLevel: this.currentLevel
-        };
-    }
-    
-    saveProgress() {
-        const progressData = {
-            currentLevel: this.currentLevel,
-            unlockedLevels: this.unlockedLevels,
-            completedLevels: this.completedLevels
-        };
+        // Hardware control track
+        this.tracks.hardware.levels = [
+            {
+                id: 1,
+                title: "LED Blinker",
+                description: "Control an LED using GPIO simulation.",
+                difficulty: "Beginner",
+                objectives: ["Use digital outputs", "Create timing loops"],
+                code: `import time
+
+# Simulated GPIO control
+def digitalWrite(pin, value):
+    print(f"Setting pin {pin} to {'HIGH' if value else 'LOW'}")
+
+def delay(ms):
+    time.sleep(ms/1000.0)
+
+# Blink an LED
+for i in range(10):
+    digitalWrite(13, True)  # Turn on LED
+    delay(500)              # Wait 500ms
+    digitalWrite(13, False) # Turn off LED
+    delay(500)              # Wait 500ms`,
+                hint: "Use loops for repetitive actions.",
+                completed: false,
+                xp: 10
+            },
+            // Additional hardware levels would go here...
+        ];
         
-        localStorage.setItem('levelSystemProgress', JSON.stringify(progressData));
+        // Web development track
+        this.tracks.web.levels = [
+            {
+                id: 1,
+                title: "Simple Server",
+                description: "Create a basic HTTP server.",
+                difficulty: "Beginner",
+                objectives: ["Import http module", "Handle requests"],
+                code: `# This is a conceptual example for web dev track
+# In a real environment, you'd use Flask or similar
+
+def simple_server():
+    print("Starting simple server...")
+    print("Server listening on port 8000")
+    print("Visit http://localhost:8000")
+
+simple_server()`,
+                hint: "Web servers listen for requests and send responses.",
+                completed: false,
+                xp: 10
+            },
+            // Additional web levels would go here...
+        ];
     }
     
-    loadProgress() {
-        const savedData = localStorage.getItem('levelSystemProgress');
-        if (savedData) {
-            try {
-                const progress = JSON.parse(savedData);
-                this.currentLevel = progress.currentLevel || 1;
-                this.unlockedLevels = progress.unlockedLevels || [1];
-                this.completedLevels = progress.completedLevels || [];
-            } catch (e) {
-                console.error('Error loading progress:', e);
-                // Reset to default if there's an error
-                this.currentLevel = 1;
-                this.unlockedLevels = [1];
-                this.completedLevels = [];
-            }
-        } else {
-            // Default starting state
-            this.currentLevel = 1;
-            this.unlockedLevels = [1];
-            this.completedLevels = [];
+    setupEventListeners() {
+        document.getElementById('course-select').addEventListener('change', (e) => {
+            this.switchCourse(e.target.value);
+        });
+    }
+    
+    switchCourse(courseId) {
+        // Update level system with new track
+        if (window.levelSystem) {
+            window.levelSystem.setTrack(courseId);
+        }
+        // Update UI to reflect new course
+        this.updateCourseDisplay(courseId);
+    }
+    
+    getTrack(courseId) {
+        return this.tracks[courseId];
+    }
+    
+    getAllTracks() {
+        return this.tracks;
+    }
+    
+    updateCourseDisplay(courseId) {
+        const track = this.getTrack(courseId);
+        if (track) {
+            document.querySelector('.course-selector select').style.backgroundColor = track.color;
         }
     }
     
-    resetProgress() {
-        this.currentLevel = 1;
-        this.unlockedLevels = [1];
-        this.completedLevels = [];
-        this.saveProgress();
+    getLevelsForCourse(courseId) {
+        const track = this.getTrack(courseId);
+        return track ? track.levels : [];
     }
 }
 
-// Export for use in main application
-window.LevelSystem = LevelSystem;
+// Initialize course tracks system
+window.CourseTracks = CourseTracks;
