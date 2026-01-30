@@ -1,0 +1,28 @@
+{
+  "name": "kids-python-game-platform",
+  "version": "1.0.0",
+  "description": "An interactive web-based learning platform for kids to learn Python through game building",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": [
+    "education",
+    "python",
+    "learning",
+    "games",
+    "kids",
+    "coding"
+  ],
+  "author": "Joao Caldas",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joaoccaldas/kids-python-game-platform.git"
+  },
+  "bugs": {
+    "url": "https://github.com/joaoccaldas/kids-python-game-platform/issues"
+  },
+  "homepage": "https://joaoccaldas.github.io/kids-python-game-platform/"
+}
