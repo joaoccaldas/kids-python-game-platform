@@ -1,4 +1,4 @@
-// Authentication system
+// Authentication system with secure password hashing
 class AuthSystem {
     constructor() {
         this.currentUser = null;
@@ -11,20 +11,37 @@ class AuthSystem {
         this.checkAuthStatus();
     }
     
+    // --- Secure password hashing using Web Crypto API ---
+    async hashPassword(password, salt) {
+        if (!salt) {
+            const saltArray = new Uint8Array(16);
+            crypto.getRandomValues(saltArray);
+            salt = Array.from(saltArray).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        const encoder = new TextEncoder();
+        const data = encoder.encode(salt + password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return { hash, salt };
+    }
+    
+    async verifyPassword(password, storedHash, storedSalt) {
+        const { hash } = await this.hashPassword(password, storedSalt);
+        return hash === storedHash;
+    }
+    
     setupEventListeners() {
-        // Login form
         document.getElementById('login-form').addEventListener('submit', (e) => {
             e.preventDefault();
             this.login();
         });
         
-        // Register form
         document.getElementById('register-form').addEventListener('submit', (e) => {
             e.preventDefault();
             this.register();
         });
         
-        // Switch between forms
         document.getElementById('show-register').addEventListener('click', (e) => {
             e.preventDefault();
             this.showForm('register');
@@ -35,7 +52,6 @@ class AuthSystem {
             this.showForm('login');
         });
         
-        // Logout
         document.getElementById('logout-btn').addEventListener('click', () => {
             this.logout();
         });
@@ -51,7 +67,7 @@ class AuthSystem {
         }
     }
     
-    register() {
+    async register() {
         const name = document.getElementById('register-name').value;
         const email = document.getElementById('register-email').value;
         const password = document.getElementById('register-password').value;
@@ -67,20 +83,22 @@ class AuthSystem {
             return;
         }
         
-        // Check if user already exists
         if (this.users.some(user => user.email === email)) {
             alert('User with this email already exists!');
             return;
         }
         
-        // Create new user
+        // Hash password with random salt
+        const { hash, salt } = await this.hashPassword(password);
+        
         const newUser = {
             id: Date.now().toString(),
             name: name,
             email: email,
-            password: btoa(password), // Simple base64 encoding for demo purposes
+            passwordHash: hash,
+            passwordSalt: salt,
             registrationDate: new Date().toISOString(),
-            progress: {} // Will store progress for different courses
+            progress: {}
         };
         
         this.users.push(newUser);
@@ -90,21 +108,55 @@ class AuthSystem {
         this.showForm('login');
     }
     
-    login() {
+    async login() {
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
         
-        const user = this.users.find(u => u.email === email && u.password === btoa(password));
+        // Find user by email
+        const user = this.users.find(u => u.email === email);
         
-        if (user) {
-            this.currentUser = user;
-            localStorage.setItem('currentUser', JSON.stringify(user));
-            this.showApp();
-            this.updateUserInfo();
-            console.log('Login successful', user);
-        } else {
+        if (!user) {
             alert('Invalid email or password!');
+            return;
         }
+        
+        // Support legacy btoa-encoded passwords (auto-migrate on login)
+        if (user.password && !user.passwordHash) {
+            try {
+                const decoded = atob(user.password);
+                if (decoded === password) {
+                    // Migrate to hashed password
+                    const { hash, salt } = await this.hashPassword(password);
+                    user.passwordHash = hash;
+                    user.passwordSalt = salt;
+                    delete user.password;
+                    localStorage.setItem('users', JSON.stringify(this.users));
+                } else {
+                    alert('Invalid email or password!');
+                    return;
+                }
+            } catch {
+                alert('Invalid email or password!');
+                return;
+            }
+        } else {
+            // Verify hashed password
+            const valid = await this.verifyPassword(password, user.passwordHash, user.passwordSalt);
+            if (!valid) {
+                alert('Invalid email or password!');
+                return;
+            }
+        }
+        
+        this.currentUser = user;
+        // Store session reference (not the password)
+        const sessionUser = { ...user };
+        delete sessionUser.passwordHash;
+        delete sessionUser.passwordSalt;
+        delete sessionUser.password;
+        localStorage.setItem('currentUser', JSON.stringify(sessionUser));
+        this.showApp();
+        this.updateUserInfo();
     }
     
     logout() {
@@ -161,19 +213,20 @@ class AuthSystem {
             xp: xp
         };
         
-        // Update total XP
         this.currentUser.progress[courseId].totalXP = Object.values(
             this.currentUser.progress[courseId].levels
         ).reduce((sum, level) => sum + (level.xp || 0), 0);
         
-        // Update in users array
         const userIndex = this.users.findIndex(u => u.id === this.currentUser.id);
         if (userIndex !== -1) {
             this.users[userIndex] = this.currentUser;
             localStorage.setItem('users', JSON.stringify(this.users));
         }
         
-        localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+        const sessionUser = { ...this.currentUser };
+        delete sessionUser.passwordHash;
+        delete sessionUser.passwordSalt;
+        localStorage.setItem('currentUser', JSON.stringify(sessionUser));
     }
     
     getUserProgress(courseId) {
