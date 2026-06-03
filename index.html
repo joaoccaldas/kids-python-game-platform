@@ -1,76 +1,164 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python Games for Kids</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/skulpt/1.2.0/skulpt.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/skulpt/1.2.0/skulpt-stdlib.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodeQuest: Python Realms</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/skulpt/1.2.0/skulpt.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/skulpt/1.2.0/skulpt-stdlib.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🐍 Python Games for Kids</h1>
-            <div class="progress-container">
-                <div class="level-indicator">Level: <span id="current-level">1</span>/10</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progress-fill"></div>
-                </div>
-            </div>
-        </header>
+  <div class="sky-orb orb-one"></div>
+  <div class="sky-orb orb-two"></div>
 
-        <div class="main-content">
-            <div class="editor-section">
-                <div class="editor-header">
-                    <h2>Code Editor</h2>
-                    <div class="level-navigation">
-                        <button id="prev-level" class="nav-btn">← Prev</button>
-                        <span id="level-title">Drawing a Square</span>
-                        <button id="next-level" class="nav-btn">Next →</button>
-                    </div>
-                </div>
-                
-                <textarea id="code-editor" spellcheck="false"># Welcome! Draw a square
-import turtle
-t = turtle.Turtle()
-
-for i in range(4):
-    t.forward(100)
-    t.right(90)
-</textarea>
-                
-                <div class="editor-controls">
-                    <button id="run-btn" class="primary-btn">▶ Run Code</button>
-                    <button id="reset-btn" class="secondary-btn">↺ Reset</button>
-                    <button id="hint-btn" class="secondary-btn">💡 Hint</button>
-                </div>
-                
-                <div id="debug-output" class="debug-panel">
-                    <h3>Output:</h3>
-                    <pre id="output-content"></pre>
-                </div>
-            </div>
-            
-            <div class="canvas-section">
-                <h2>Game Canvas</h2>
-                <div class="canvas-container">
-                    <canvas id="game-canvas" width="600" height="400"></canvas>
-                </div>
-                <div class="level-description">
-                    <p id="level-description">Draw a square using turtle graphics. Use forward() and right() functions.</p>
-                </div>
-            </div>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-block">
+        <div class="brand-mark">🐍</div>
+        <div>
+          <p class="eyebrow">Sintra Kids Lab</p>
+          <h1>CodeQuest: Python Realms</h1>
         </div>
-        
-        <footer>
-            <p>Made with ❤️ for young programmers | All code runs safely in your browser</p>
-        </footer>
-    </div>
+      </div>
 
-    <script src="js/main.js"></script>
-    <script src="js/canvas-renderer.js"></script>
-    <script src="js/debugger.js"></script>
-    <script src="js/level-system.js"></script>
+      <div class="player-stats" aria-label="Player progress">
+        <div class="stat-pill"><span>⭐</span><strong id="xp-total">0</strong><small>XP</small></div>
+        <div class="stat-pill"><span>🪙</span><strong id="coin-total">0</strong><small>Coins</small></div>
+        <div class="stat-pill"><span>🔥</span><strong id="streak-total">0</strong><small>Streak</small></div>
+        <button id="reset-progress" class="ghost-btn" title="Reset all saved progress">Reset</button>
+      </div>
+    </header>
+
+    <section class="hero-panel">
+      <div>
+        <p class="eyebrow">Today’s mission</p>
+        <h2 id="mission-headline">Open the Square Gate</h2>
+        <p id="mission-copy">Use Python as your magic system. Fix the spell, run it, and watch the world change.</p>
+      </div>
+      <div class="progress-card">
+        <div class="progress-row">
+          <span id="current-level-label">Level 1 / 10</span>
+          <span id="completion-label">0% complete</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      </div>
+    </section>
+
+    <section class="world-map-card">
+      <div class="section-heading">
+        <p class="eyebrow">World map</p>
+        <h3>Choose your quest</h3>
+      </div>
+      <div id="world-map" class="world-map" aria-label="Quest map"></div>
+    </section>
+
+    <main class="game-layout">
+      <aside class="quest-panel">
+        <div class="quest-avatar" id="quest-avatar">🐢</div>
+        <p class="eyebrow" id="world-name">Turtle Valley</p>
+        <h2 id="level-title">Open the Square Gate</h2>
+        <p id="level-description">A square gate blocks the turtle village. Use a loop to build exactly four bridge pieces.</p>
+
+        <div class="quest-meta">
+          <span id="difficulty-chip">Beginner</span>
+          <span id="concept-chip">Loops</span>
+        </div>
+
+        <div class="mission-box">
+          <h4>Quest objective</h4>
+          <ul id="objectives-list"></ul>
+        </div>
+
+        <div class="reward-box">
+          <h4>Reward</h4>
+          <p><span id="reward-xp">+20 XP</span> · <span id="reward-coins">+10 coins</span></p>
+          <p class="reward-unlock" id="reward-unlock">Unlock: Turtle Shell Badge</p>
+        </div>
+
+        <button id="hint-btn" class="hint-btn">💡 Ask Nova for a hint</button>
+      </aside>
+
+      <section class="stage-card">
+        <div class="stage-header">
+          <div>
+            <p class="eyebrow">Live world</p>
+            <h3 id="stage-title">Turtle Valley</h3>
+          </div>
+          <div id="mission-status" class="mission-status">Ready</div>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="game-canvas" width="760" height="460"></canvas>
+        </div>
+      </section>
+
+      <section class="spell-card">
+        <div class="spell-header">
+          <div>
+            <p class="eyebrow">Code spell</p>
+            <h3>Fix the Python spell</h3>
+          </div>
+          <div class="level-navigation">
+            <button id="prev-level" class="nav-btn">← Prev</button>
+            <button id="next-level" class="nav-btn">Next →</button>
+          </div>
+        </div>
+
+        <textarea id="code-editor" spellcheck="false" aria-label="Python code editor"></textarea>
+
+        <div class="editor-controls">
+          <button id="run-btn" class="primary-btn">▶ Run Spell</button>
+          <button id="reset-btn" class="secondary-btn">↺ Reset Spell</button>
+          <button id="save-code-btn" class="secondary-btn">💾 Save Spell</button>
+        </div>
+
+        <div id="debug-output" class="debug-panel">
+          <div class="debug-header">
+            <h3>Nova’s spell log</h3>
+            <span id="output-mood">Waiting</span>
+          </div>
+          <pre id="output-content">Run your spell to wake up the realm.</pre>
+        </div>
+      </section>
+    </main>
+
+    <section class="inventory-card">
+      <div class="section-heading">
+        <p class="eyebrow">Inventory</p>
+        <h3>Your unlocked badges</h3>
+      </div>
+      <div id="inventory-list" class="inventory-list"></div>
+    </section>
+
+    <footer>
+      <p>All progress is saved locally in this browser. No account, no server, just tiny Python dragons learning to fly.</p>
+    </footer>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <div id="success-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card">
+      <div id="modal-badge" class="modal-badge">🏆</div>
+      <h2 id="modal-title">Quest complete!</h2>
+      <p id="modal-copy">You changed the world with Python.</p>
+      <div class="modal-rewards">
+        <span id="modal-xp">+0 XP</span>
+        <span id="modal-coins">+0 coins</span>
+      </div>
+      <div class="modal-actions">
+        <button id="modal-next" class="primary-btn">Next quest</button>
+        <button id="modal-close" class="secondary-btn">Stay here</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/level-system.js"></script>
+  <script src="js/canvas-renderer.js"></script>
+  <script src="js/debugger.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>
