@@ -1,51 +1,49 @@
-// Debugger for Python code errors
+// Friendly debugger for CodeQuest Python spells
 class Debugger {
-    constructor(outputElementId) {
-        this.outputElement = document.getElementById(outputElementId);
-        this.errorPatterns = [
-            { pattern: /SyntaxError/gi, message: "Check your syntax - did you forget a colon, parenthesis, or indent properly?" },
-            { pattern: /IndentationError/gi, message: "Check your indentation - Python cares about spaces at the beginning of lines!" },
-            { pattern: /NameError/gi, message: "You're trying to use a variable or function that hasn't been defined yet." },
-            { pattern: /TypeError/gi, message: "You're trying to perform an operation on incompatible types (like adding a number to text)." },
-            { pattern: /AttributeError/gi, message: "You're trying to access a property or method that doesn't exist on this object." },
-            { pattern: /ValueError/gi, message: "The value you provided isn't valid for this operation." },
-            { pattern: /ZeroDivisionError/gi, message: "You can't divide by zero - math doesn't allow it!" }
-        ];
-    }
-    
-    parseError(errorText) {
-        let friendlyMessage = "Something went wrong with your code:\n" + errorText + "\n\n";
-        
-        // Look for known error patterns
-        for (const errorPattern of this.errorPatterns) {
-            if (errorPattern.pattern.test(errorText)) {
-                friendlyMessage += "💡 Hint: " + errorPattern.message;
-                break;
-            }
-        }
-        
-        if (friendlyMessage === "Something went wrong with your code:\n" + errorText + "\n\n") {
-            friendlyMessage += "💡 General Hint: Check for typos, missing punctuation, or incorrect function names.";
-        }
-        
-        return friendlyMessage;
-    }
-    
-    displayError(errorText) {
-        this.outputElement.textContent = this.parseError(errorText);
-        this.outputElement.style.color = "#e74c3c";
-    }
-    
-    displaySuccess(message) {
-        this.outputElement.textContent = message;
-        this.outputElement.style.color = "#27ae60";
-    }
-    
-    displayInfo(message) {
-        this.outputElement.textContent = message;
-        this.outputElement.style.color = "#3498db";
-    }
+  constructor(outputElementId) {
+    this.outputElement = document.getElementById(outputElementId);
+    this.moodElement = document.getElementById('output-mood');
+    this.errorPatterns = [
+      { pattern: /SyntaxError/gi, message: 'Your spell has a tiny crack. Check for a missing colon, parenthesis, or quote.' },
+      { pattern: /IndentationError/gi, message: 'Python reads spaces like footsteps. Make sure the lines inside loops are indented.' },
+      { pattern: /NameError/gi, message: 'That name has not been summoned yet. Check spelling or create the variable first.' },
+      { pattern: /TypeError/gi, message: 'Two spell ingredients do not fit together. Check numbers, text, and function inputs.' },
+      { pattern: /AttributeError/gi, message: 'That spell move does not exist on this object. Check the function name.' },
+      { pattern: /ValueError/gi, message: 'That value does not work here. Try a different number or word.' },
+      { pattern: /ZeroDivisionError/gi, message: 'Division by zero opens a black hole. Pick another number.' }
+    ];
+  }
+
+  parseError(errorText) {
+    let friendlyMessage = `🧯 Nova found a bug-dragon:\n${errorText}\n\n`;
+    const match = this.errorPatterns.find(errorPattern => errorPattern.pattern.test(errorText));
+    friendlyMessage += `💡 ${match ? match.message : 'Check for typos, missing punctuation, or a line that needs indentation.'}`;
+    return friendlyMessage;
+  }
+
+  displayError(errorText) {
+    this.outputElement.textContent = this.parseError(errorText);
+    this.outputElement.className = 'error-text';
+    if (this.moodElement) this.moodElement.textContent = 'Needs repair';
+  }
+
+  displaySuccess(message) {
+    this.outputElement.textContent = message;
+    this.outputElement.className = 'success-text';
+    if (this.moodElement) this.moodElement.textContent = 'Quest magic!';
+  }
+
+  displayInfo(message) {
+    this.outputElement.textContent = message;
+    this.outputElement.className = 'info-text';
+    if (this.moodElement) this.moodElement.textContent = 'Thinking';
+  }
+
+  displayHint(message) {
+    this.outputElement.textContent = `💡 Hint from Nova:\n${message}`;
+    this.outputElement.className = 'info-text';
+    if (this.moodElement) this.moodElement.textContent = 'Hint ready';
+  }
 }
 
-// Export for use in main application
 window.Debugger = Debugger;
