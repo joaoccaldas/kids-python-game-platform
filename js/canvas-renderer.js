@@ -7,6 +7,7 @@ class CanvasRenderer {
     this.particles = [];
     this.level = null;
     this.frame = 0;
+    this.successState = null;
     this.turtle = this.defaultTurtle();
     this.animationId = null;
     this.startLoop();
@@ -31,6 +32,7 @@ class CanvasRenderer {
   reset() {
     this.operations = [];
     this.particles = [];
+    this.successState = null;
     this.turtle = this.defaultTurtle();
     this.renderBase();
   }
@@ -41,6 +43,7 @@ class CanvasRenderer {
       this.renderBase();
       this.drawOperations();
       this.drawTurtle();
+      this.updateSuccessAnimation();
       this.updateParticles();
       this.animationId = requestAnimationFrame(tick);
     };
@@ -139,6 +142,11 @@ class CanvasRenderer {
   }
 
   drawQuestObject(scene) {
+    if (this.level?.id === 1) {
+      this.drawSquareGateScene();
+      return;
+    }
+
     const ctx = this.ctx;
     const w = this.canvas.width;
     const h = this.canvas.height;
@@ -165,6 +173,126 @@ class CanvasRenderer {
     ctx.restore();
   }
 
+  drawSquareGateScene() {
+    const ctx = this.ctx;
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    const gateX = w * 0.76;
+    const gateY = h * 0.49;
+    const opened = this.successState?.type === 'square-gate';
+    const progress = opened ? this.easeOutCubic(Math.min(1, this.successState.progress / 90)) : 0;
+    const glow = opened ? 0.45 + Math.sin(this.frame / 8) * 0.2 : 0.18 + Math.sin(this.frame / 30) * 0.08;
+
+    ctx.save();
+
+    // Path that becomes visible when the first spell succeeds.
+    ctx.globalAlpha = 0.16 + progress * 0.64;
+    ctx.fillStyle = '#fde68a';
+    ctx.beginPath();
+    ctx.ellipse(gateX - 70, h * 0.78, 128 + progress * 70, 28 + progress * 8, -0.08, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Two stone pillars.
+    ctx.shadowColor = `rgba(250,204,21,${glow})`;
+    ctx.shadowBlur = 18 + progress * 20;
+    ctx.fillStyle = '#57534e';
+    ctx.strokeStyle = '#292524';
+    ctx.lineWidth = 5;
+    const pillarTop = gateY - 86;
+    const pillarBottom = gateY + 70;
+    const leftPillarX = gateX - 62;
+    const rightPillarX = gateX + 62;
+
+    [leftPillarX, rightPillarX].forEach(x => {
+      ctx.beginPath();
+      ctx.roundRect(x - 19, pillarTop, 38, pillarBottom - pillarTop, 9);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#78716c';
+      ctx.fillRect(x - 23, pillarTop - 14, 46, 18);
+      ctx.fillStyle = '#57534e';
+    });
+
+    // Gate doors swing open after success.
+    const doorGap = 10 + progress * 58;
+    const doorAngle = progress * 0.24;
+    ctx.fillStyle = '#7c2d12';
+    ctx.strokeStyle = '#431407';
+    ctx.lineWidth = 4;
+    this.drawGateDoor(gateX - doorGap, gateY, -1, doorAngle);
+    this.drawGateDoor(gateX + doorGap, gateY, 1, doorAngle);
+
+    // Rune lock breaks into light.
+    const lockScale = Math.max(0, 1 - progress * 1.2);
+    if (lockScale > 0.02) {
+      ctx.save();
+      ctx.translate(gateX, gateY + 2);
+      ctx.scale(lockScale, lockScale);
+      ctx.fillStyle = '#facc15';
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, 0, 20, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.font = '22px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#78350f';
+      ctx.fillText('□', 0, 1);
+      ctx.restore();
+    }
+
+    // Success turtle crosses through the gate, separate from the drawing turtle.
+    if (opened) {
+      const turtleProgress = this.easeOutCubic(Math.min(1, Math.max(0, (this.successState.progress - 18) / 82)));
+      const turtleX = gateX - 190 + turtleProgress * 270;
+      const turtleY = gateY + 92 - Math.sin(turtleProgress * Math.PI) * 34;
+      ctx.save();
+      ctx.translate(turtleX, turtleY);
+      ctx.rotate(Math.sin(this.frame / 6) * 0.08);
+      ctx.font = '42px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(250,204,21,0.75)';
+      ctx.shadowBlur = 20;
+      ctx.fillText(this.level.avatar || '🐢', 0, 0);
+      ctx.restore();
+
+      ctx.globalAlpha = 0.22 + Math.sin(this.frame / 9) * 0.07;
+      ctx.strokeStyle = '#fef3c7';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(gateX - 178, gateY + 114);
+      ctx.quadraticCurveTo(gateX - 22, gateY + 50, gateX + 106, gateY + 100);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    ctx.restore();
+  }
+
+  drawGateDoor(centerX, centerY, direction, angle) {
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.rotate(direction * angle);
+    ctx.beginPath();
+    ctx.roundRect(direction === -1 ? -45 : 0, -64, 45, 130, 8);
+    ctx.fill();
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(254,243,199,0.4)';
+    ctx.lineWidth = 2;
+    for (let y = -42; y <= 42; y += 28) {
+      ctx.beginPath();
+      ctx.moveTo(direction === -1 ? -37 : 8, y);
+      ctx.lineTo(direction === -1 ? -8 : 37, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   forward(distance) {
     const start = { x: this.turtle.x, y: this.turtle.y };
     this.turtle.x += Math.cos(this.radians()) * distance;
@@ -182,8 +310,16 @@ class CanvasRenderer {
     }
   }
 
-  right(angle) { this.turtle.angle += angle; }
-  left(angle) { this.turtle.angle -= angle; }
+  right(angle) {
+    this.operations.push({ type: 'turn', direction: 'right', angle: Number(angle) || 0 });
+    this.turtle.angle += angle;
+  }
+
+  left(angle) {
+    this.operations.push({ type: 'turn', direction: 'left', angle: Number(angle) || 0 });
+    this.turtle.angle -= angle;
+  }
+
   penUp() { this.turtle.penDown = false; }
   penDown() { this.turtle.penDown = true; }
   setColor(color) { this.turtle.color = this.normalizeColor(color); }
@@ -210,6 +346,10 @@ class CanvasRenderer {
     });
   }
 
+  getOperations() {
+    return [...this.operations];
+  }
+
   radians() { return this.turtle.angle * Math.PI / 180; }
 
   normalizeColor(color) {
@@ -227,6 +367,7 @@ class CanvasRenderer {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     this.operations.forEach(op => {
+      if (op.type === 'turn') return;
       ctx.strokeStyle = op.color;
       ctx.lineWidth = op.width;
       ctx.shadowColor = op.color;
@@ -260,19 +401,35 @@ class CanvasRenderer {
   }
 
   celebrate(level) {
+    if (level?.id === 1) {
+      this.successState = { type: 'square-gate', progress: 0 };
+    }
+
     const colors = ['#facc15', '#22c55e', '#38bdf8', '#fb7185', '#a78bfa', '#f97316'];
-    for (let i = 0; i < 90; i++) {
+    const origin = level?.id === 1
+      ? { x: this.canvas.width * 0.76, y: this.canvas.height * 0.49 }
+      : { x: this.canvas.width * 0.78, y: this.canvas.height * 0.40 };
+
+    for (let i = 0; i < 120; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = 2 + Math.random() * 6;
+      const speed = 2 + Math.random() * 7;
       this.particles.push({
-        x: this.canvas.width * 0.78,
-        y: this.canvas.height * 0.40,
+        x: origin.x,
+        y: origin.y,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
-        life: 50 + Math.random() * 50,
+        life: 55 + Math.random() * 65,
         color: colors[i % colors.length],
         size: 3 + Math.random() * 5
       });
+    }
+  }
+
+  updateSuccessAnimation() {
+    if (!this.successState) return;
+    this.successState.progress += 1;
+    if (this.successState.progress > 190) {
+      this.successState.progress = 190;
     }
   }
 
@@ -292,6 +449,10 @@ class CanvasRenderer {
       ctx.fill();
     });
     ctx.restore();
+  }
+
+  easeOutCubic(value) {
+    return 1 - Math.pow(1 - value, 3);
   }
 }
 
