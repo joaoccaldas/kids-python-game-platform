@@ -13,10 +13,20 @@ class KidsPythonPlatform {
     this.prevButton = document.getElementById('prev-level');
     this.nextButton = document.getElementById('next-level');
     this.resetProgressButton = document.getElementById('reset-progress');
+    this.soundToggle = document.getElementById('sound-toggle');
+    this.guideButton = document.getElementById('guide-btn');
     this.toast = document.getElementById('toast');
     this.modal = document.getElementById('success-modal');
     this.modalNext = document.getElementById('modal-next');
     this.modalClose = document.getElementById('modal-close');
+    this.guideModal = document.getElementById('guide-modal');
+    this.guideStart = document.getElementById('guide-start');
+    this.guideClose = document.getElementById('guide-close');
+    this.saveStatus = document.getElementById('save-status');
+    this.scannerList = document.getElementById('scanner-list');
+    this.scannerScore = document.getElementById('scanner-score');
+    this.soundEnabled = localStorage.getItem('codequest-sound-enabled') === 'true';
+    this.audioContext = null;
 
     this.init();
   }
@@ -31,10 +41,20 @@ class KidsPythonPlatform {
     this.resetProgressButton.addEventListener('click', () => this.resetProgress());
     this.modalNext.addEventListener('click', () => { this.closeModal(); this.nextLevel(); });
     this.modalClose.addEventListener('click', () => this.closeModal());
+    if (this.soundToggle) this.soundToggle.addEventListener('click', () => this.toggleSound());
+    if (this.guideButton) this.guideButton.addEventListener('click', () => this.openGuide());
+    if (this.guideStart) this.guideStart.addEventListener('click', () => this.closeGuide(true));
+    if (this.guideClose) this.guideClose.addEventListener('click', () => this.closeGuide(false));
+    this.codeEditor.addEventListener('input', () => this.handleCodeInput());
 
+    this.updateSoundButton();
     this.renderWorldMap();
     this.loadLevel(this.levelSystem.getCurrentLevel().id);
     this.updateHUD();
+
+    if (this.guideModal && !localStorage.getItem('codequest-guide-seen')) {
+      setTimeout(() => this.openGuide(), 500);
+    }
   }
 
   setText(id, text) {
@@ -46,6 +66,7 @@ class KidsPythonPlatform {
     const level = this.levelSystem.getLevel(levelId);
     if (!level || !this.levelSystem.isLevelUnlocked(levelId)) {
       this.showToast('Complete the current quest to unlock that realm.');
+      this.playSound('error');
       return;
     }
 
@@ -77,8 +98,19 @@ class KidsPythonPlatform {
     });
 
     this.debugger.displayInfo('Run your spell to wake up the realm.');
+    this.updateScanner();
     this.updateHUD();
     this.renderWorldMap();
+  }
+
+  handleCodeInput() {
+    clearTimeout(this.autoSaveTimer);
+    this.setSaveStatus('Editing...');
+    this.updateScanner();
+    this.autoSaveTimer = setTimeout(() => {
+      this.saveCurrentCode(false);
+      this.setSaveStatus('Autosaved');
+    }, 700);
   }
 
   runCode() {
@@ -89,6 +121,7 @@ class KidsPythonPlatform {
     this.simulateTurtleCode(code);
     this.debugger.displayInfo('Casting spell...');
     this.setText('mission-status', 'Casting');
+    this.playSound('run');
 
     try {
       const builtinRead = filename => {
@@ -115,10 +148,12 @@ class KidsPythonPlatform {
         .catch(error => {
           this.setText('mission-status', 'Repair needed');
           this.debugger.displayError(String(error));
+          this.playSound('error');
         });
     } catch (error) {
       this.setText('mission-status', 'Repair needed');
       this.debugger.displayError(String(error.message || error));
+      this.playSound('error');
     }
   }
 
@@ -187,6 +222,7 @@ class KidsPythonPlatform {
     if (!validation.valid) {
       this.setText('mission-status', 'Almost');
       this.debugger.displayInfo(`🧪 Spell ran, but the quest is not complete yet.\n\n${validation.message}`);
+      this.playSound('almost');
       return;
     }
 
@@ -197,13 +233,14 @@ class KidsPythonPlatform {
 
     this.updateHUD();
     this.renderWorldMap();
+    this.playSound('success');
 
     if (!completion.alreadyCompleted) this.openModal(level);
     else this.showToast('Spell still works. Nice practice run.');
   }
 
-  validateQuest(code, level) {
-    const checks = {
+  buildCheckMap(code) {
+    return {
       range4: /range\s*\(\s*4\s*\)/i.test(code),
       range5: /range\s*\(\s*5\s*\)/i.test(code),
       rangeMany: /range\s*\(\s*(3[0-9]|[4-9][0-9]|100)\s*\)/i.test(code),
@@ -225,31 +262,44 @@ class KidsPythonPlatform {
       nestedLoop: /for\s+\w+\s+in\s+range[\s\S]*for\s+\w+\s+in\s+range/i.test(code),
       creativeLength: code.trim().split('\n').filter(Boolean).length >= 8
     };
+  }
 
+  getQuestCheckResults(code, level) {
+    const checks = this.buildCheckMap(code);
+    return level.success.checks.map(check => ({ check, passed: Boolean(checks[check]), label: this.prettyCheck(check) }));
+  }
+
+  validateQuest(code, level) {
+    const checks = this.buildCheckMap(code);
     const missing = level.success.checks.filter(check => !checks[check]);
-    if (missing.length > 0) {
-      return { valid: false, message: `Nova's scanner still needs: ${missing.map(item => this.prettyCheck(item)).join(', ')}.` };
-    }
-
+    if (missing.length > 0) return { valid: false, message: `Nova's scanner still needs: ${missing.map(item => this.prettyCheck(item)).join(', ')}.` };
     return { valid: true, message: 'The realm changed because your Python matched the mission.' };
+  }
+
+  updateScanner() {
+    const level = this.levelSystem.getCurrentLevel();
+    if (!level || !this.scannerList) return;
+    const results = this.getQuestCheckResults(this.codeEditor.value, level);
+    const passed = results.filter(result => result.passed).length;
+    this.scannerScore.textContent = `${passed} / ${results.length}`;
+    this.scannerList.innerHTML = '';
+    results.forEach(result => {
+      const item = document.createElement('div');
+      item.className = `scanner-item ${result.passed ? 'passed' : 'missing'}`;
+      item.innerHTML = `<span>${result.passed ? '✅' : '⬜'}</span><strong>${result.label}</strong>`;
+      this.scannerList.appendChild(item);
+    });
   }
 
   hasFunctionCall(code) {
     const match = code.match(/def\s+(\w+)\s*\(/i);
     if (!match) return false;
-    const name = match[1];
-    const calls = code.match(new RegExp(`${name}\\s*\\(`, 'g')) || [];
+    const calls = code.match(new RegExp(`${match[1]}\\s*\\(`, 'g')) || [];
     return calls.length >= 2;
   }
 
   prettyCheck(check) {
-    const names = {
-      range4: 'repeat 4 times', range5: 'repeat 5 times', rangeMany: 'many repeats', right90: 'turn 90 degrees',
-      right144: 'turn 144 degrees', forward: 'move forward', colorsList: 'a colors list', colorCall: 'a color spell',
-      loop: 'a for loop', growingForward: 'growing movement', turning: 'turning', defFunction: 'a function definition',
-      functionCall: 'calling your function', modulo: 'color cycling with %', variable: 'a variable', print: 'a print message',
-      ifStatement: 'an if statement', elseStatement: 'an else statement', nestedLoop: 'a loop inside a loop', creativeLength: 'a bigger creative spell'
-    };
+    const names = { range4:'repeat 4 times', range5:'repeat 5 times', rangeMany:'many repeats', right90:'turn 90 degrees', right144:'turn 144 degrees', forward:'move forward', colorsList:'a colors list', colorCall:'a color spell', loop:'a for loop', growingForward:'growing movement', turning:'turning', defFunction:'a function definition', functionCall:'calling your function', modulo:'color cycling with %', variable:'a variable', print:'a print message', ifStatement:'an if statement', elseStatement:'an else statement', nestedLoop:'a loop inside a loop', creativeLength:'a bigger creative spell' };
     return names[check] || check;
   }
 
@@ -258,108 +308,59 @@ class KidsPythonPlatform {
     this.codeEditor.value = level.code;
     this.levelSystem.saveCode(level.id, level.code);
     this.canvasRenderer.reset();
+    this.updateScanner();
+    this.setSaveStatus('Starter restored');
     this.showToast('Spell reset to the quest starter.');
   }
 
-  showHint() {
-    this.debugger.displayHint(this.levelSystem.getCurrentLevel().hint);
-  }
+  showHint() { this.debugger.displayHint(this.levelSystem.getCurrentLevel().hint); this.playSound('hint'); }
+  saveCurrentCode(showToast = true) { const level = this.levelSystem.getCurrentLevel(); this.levelSystem.saveCode(level.id, this.codeEditor.value); if (showToast) { this.setSaveStatus('Saved'); this.showToast('Spell saved in this browser.'); this.playSound('save'); } }
+  setSaveStatus(message) { if (this.saveStatus) this.saveStatus.textContent = message; }
+  prevLevel() { const prev = this.levelSystem.getPrevLevel(); if (prev) this.loadLevel(prev.id); }
+  nextLevel() { const next = this.levelSystem.getNextLevel(); if (next && this.levelSystem.isLevelUnlocked(next.id)) this.loadLevel(next.id); else if (!next) this.showToast('You completed every realm. Build your own next quest.'); else { this.showToast('Next quest is locked. Complete this one first.'); this.playSound('error'); } }
 
-  saveCurrentCode(showToast = true) {
-    const level = this.levelSystem.getCurrentLevel();
-    this.levelSystem.saveCode(level.id, this.codeEditor.value);
-    if (showToast) this.showToast('Spell saved in this browser.');
-  }
-
-  prevLevel() {
-    const prev = this.levelSystem.getPrevLevel();
-    if (prev) this.loadLevel(prev.id);
-  }
-
-  nextLevel() {
-    const next = this.levelSystem.getNextLevel();
-    if (next && this.levelSystem.isLevelUnlocked(next.id)) this.loadLevel(next.id);
-    else if (!next) this.showToast('You completed every realm. Build your own next quest.');
-    else this.showToast('Next quest is locked. Complete this one first.');
-  }
-
-  resetProgress() {
-    if (!confirm('Reset XP, coins, unlocked quests, badges, and saved spells?')) return;
-    this.levelSystem.resetProgress();
-    this.renderWorldMap();
-    this.loadLevel(1);
-    this.updateHUD();
-    this.showToast('Progress reset. Fresh adventure started.');
-  }
+  resetProgress() { if (!confirm('Reset XP, coins, unlocked quests, badges, and saved spells?')) return; this.levelSystem.resetProgress(); this.renderWorldMap(); this.loadLevel(1); this.updateHUD(); this.showToast('Progress reset. Fresh adventure started.'); }
 
   updateHUD() {
     const p = this.levelSystem.progress;
-    this.setText('xp-total', p.xp);
-    this.setText('coin-total', p.coins);
-    this.setText('streak-total', p.streak);
-    const pct = this.levelSystem.getCompletionPercentage();
-    this.setText('completion-label', `${pct}% complete`);
-    document.getElementById('progress-fill').style.width = `${pct}%`;
-
-    const inventory = document.getElementById('inventory-list');
-    inventory.innerHTML = '';
-    if (p.inventory.length === 0) {
-      const empty = document.createElement('p');
-      empty.className = 'empty-inventory';
-      empty.textContent = 'No badges yet. Complete your first quest.';
-      inventory.appendChild(empty);
-    } else {
-      p.inventory.forEach(item => {
-        const badge = document.createElement('div');
-        badge.className = 'inventory-badge';
-        badge.textContent = item;
-        inventory.appendChild(badge);
-      });
-    }
+    this.setText('xp-total', p.xp); this.setText('coin-total', p.coins); this.setText('streak-total', p.streak);
+    const pct = this.levelSystem.getCompletionPercentage(); this.setText('completion-label', `${pct}% complete`); document.getElementById('progress-fill').style.width = `${pct}%`;
+    const inventory = document.getElementById('inventory-list'); inventory.innerHTML = '';
+    if (p.inventory.length === 0) { const empty = document.createElement('p'); empty.className = 'empty-inventory'; empty.textContent = 'No badges yet. Complete your first quest.'; inventory.appendChild(empty); }
+    else p.inventory.forEach(item => { const badge = document.createElement('div'); badge.className = 'inventory-badge'; badge.textContent = item; inventory.appendChild(badge); });
   }
 
   renderWorldMap() {
-    const map = document.getElementById('world-map');
-    if (!map) return;
-    map.innerHTML = '';
+    const map = document.getElementById('world-map'); if (!map) return; map.innerHTML = '';
     this.levelSystem.levels.forEach(level => {
-      const node = document.createElement('button');
-      const completed = this.levelSystem.isLevelCompleted(level.id);
-      const unlocked = this.levelSystem.isLevelUnlocked(level.id);
-      const current = this.levelSystem.currentLevel === level.id;
-      node.className = `map-node ${completed ? 'completed' : ''} ${unlocked ? 'unlocked' : 'locked'} ${current ? 'current' : ''}`;
-      node.disabled = !unlocked;
-      node.innerHTML = `<span>${completed ? level.rewards.badge : unlocked ? level.avatar : '🔒'}</span><strong>${level.id}</strong><small>${level.concept}</small>`;
-      node.title = unlocked ? level.title : 'Locked';
-      node.addEventListener('click', () => this.loadLevel(level.id));
-      map.appendChild(node);
+      const node = document.createElement('button'); const completed = this.levelSystem.isLevelCompleted(level.id); const unlocked = this.levelSystem.isLevelUnlocked(level.id); const current = this.levelSystem.currentLevel === level.id;
+      node.className = `map-node ${completed ? 'completed' : ''} ${unlocked ? 'unlocked' : 'locked'} ${current ? 'current' : ''}`; node.disabled = !unlocked;
+      node.innerHTML = `<span>${completed ? level.rewards.badge : unlocked ? level.avatar : '🔒'}</span><strong>${level.id}</strong><small>${level.concept}</small>`; node.title = unlocked ? level.title : 'Locked'; node.addEventListener('click', () => this.loadLevel(level.id)); map.appendChild(node);
     });
   }
 
-  openModal(level) {
-    this.setText('modal-badge', level.rewards.badge);
-    this.setText('modal-title', `${level.title} complete!`);
-    this.setText('modal-copy', `You unlocked ${level.rewards.unlock}.`);
-    this.setText('modal-xp', `+${level.rewards.xp} XP`);
-    this.setText('modal-coins', `+${level.rewards.coins} coins`);
-    this.modal.classList.add('show');
-    this.modal.setAttribute('aria-hidden', 'false');
+  openModal(level) { this.setText('modal-badge', level.rewards.badge); this.setText('modal-title', `${level.title} complete!`); this.setText('modal-copy', `You unlocked ${level.rewards.unlock}.`); this.setText('modal-xp', `+${level.rewards.xp} XP`); this.setText('modal-coins', `+${level.rewards.coins} coins`); this.modal.classList.add('show'); this.modal.setAttribute('aria-hidden', 'false'); }
+  closeModal() { this.modal.classList.remove('show'); this.modal.setAttribute('aria-hidden', 'true'); }
+  openGuide() { if (!this.guideModal) return; this.guideModal.classList.add('show'); this.guideModal.setAttribute('aria-hidden', 'false'); }
+  closeGuide(markSeen) { if (!this.guideModal) return; this.guideModal.classList.remove('show'); this.guideModal.setAttribute('aria-hidden', 'true'); if (markSeen) localStorage.setItem('codequest-guide-seen', 'true'); }
+  toggleSound() { this.soundEnabled = !this.soundEnabled; localStorage.setItem('codequest-sound-enabled', String(this.soundEnabled)); this.updateSoundButton(); if (this.soundEnabled) this.playSound('success'); }
+  updateSoundButton() { if (this.soundToggle) this.soundToggle.textContent = this.soundEnabled ? 'Sound On' : 'Sound Off'; }
+
+  playSound(type) {
+    if (!this.soundEnabled) return;
+    const frequencies = { run:[330,440], success:[523,659,784], error:[180,140], almost:[260,330], hint:[392], save:[440,554] };
+    const notes = frequencies[type] || [440];
+    try {
+      this.audioContext = this.audioContext || new (window.AudioContext || window.webkitAudioContext)();
+      notes.forEach((freq, index) => {
+        const osc = this.audioContext.createOscillator(); const gain = this.audioContext.createGain(); osc.type = 'sine'; osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, this.audioContext.currentTime + index * 0.08); gain.gain.exponentialRampToValueAtTime(0.08, this.audioContext.currentTime + index * 0.08 + 0.01); gain.gain.exponentialRampToValueAtTime(0.0001, this.audioContext.currentTime + index * 0.08 + 0.16);
+        osc.connect(gain); gain.connect(this.audioContext.destination); osc.start(this.audioContext.currentTime + index * 0.08); osc.stop(this.audioContext.currentTime + index * 0.08 + 0.18);
+      });
+    } catch (error) { this.soundEnabled = false; this.updateSoundButton(); }
   }
 
-  closeModal() {
-    this.modal.classList.remove('show');
-    this.modal.setAttribute('aria-hidden', 'true');
-  }
-
-  showToast(message) {
-    if (!this.toast) return;
-    this.toast.textContent = message;
-    this.toast.classList.add('show');
-    clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => this.toast.classList.remove('show'), 2400);
-  }
+  showToast(message) { if (!this.toast) return; this.toast.textContent = message; this.toast.classList.add('show'); clearTimeout(this.toastTimer); this.toastTimer = setTimeout(() => this.toast.classList.remove('show'), 2400); }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  window.app = new KidsPythonPlatform();
-});
+document.addEventListener('DOMContentLoaded', () => { window.app = new KidsPythonPlatform(); });
