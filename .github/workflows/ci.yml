@@ -27,3 +27,6 @@ jobs:
         run: |
           test -f index.html
           test -f landing.html
+
+      - name: Learner privacy contract
+        run: node tests/privacy-contract.mjs
