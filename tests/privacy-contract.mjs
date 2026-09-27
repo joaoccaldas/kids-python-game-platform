@@ -14,5 +14,7 @@ assert.match(auth, /localStorage\.removeItem\(['"]currentUser['"]\)/);
 assert.doesNotMatch(auth, /localStorage\.setItem\(['"]users['"]/);
 assert.doesNotMatch(auth, /localStorage\.setItem\(['"]currentUser['"]/);
 assert.doesNotMatch(html, /type\s*=\s*["']password["']/i);
+assert.doesNotMatch(html, /localStorage\.setItem\(['"]pythonAdventuresUsers['"]/);
+assert.doesNotMatch(html, /password\s*:/i);
 
 console.log('Local learner-profile privacy contract passed.');
