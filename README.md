@@ -29,3 +29,13 @@ Designed for GitHub Pages. No server setup required.
 Complete and open source for educational use.
 
 Built by João Caldas.
+
+## Portfolio role
+
+**LEARNING GAME LAB.** This project explores game-based programming education. It should cross-pollinate with Wordbound and Nova's Realm around progression, challenge design, learner feedback, local persistence, accessibility, and safe child-oriented defaults.
+
+## Project context
+
+This is a personal, self-directed learning project by João Caldas. I use projects like this to learn educational game design, browser-based Python execution, progression systems, software engineering, and AI-assisted development through practical experimentation.
+
+AI tools are used extensively during research, design, coding, debugging, testing, asset ideation, and documentation. AI-generated suggestions are treated as inputs to review, not proof of correctness. Educational claims, learner safety, privacy, accessibility, and progression behavior should be validated.
