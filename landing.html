@@ -176,25 +176,17 @@
             </div>
         </div>
 
-        <div class="auth-section" id="authSection">
-            <h2 id="authTitle">Welcome! Please Log In or Register</h2>
-            <form class="auth-form" id="authForm">
+        <div class="auth-section" id="profileSection">
+            <h2>Choose a local learner name</h2>
+            <p>This is a browser-local learning profile, not an account. No password is required.</p>
+            <form class="auth-form" id="profileForm">
                 <div class="form-group">
-                    <label for="username">Username:</label>
-                    <input type="text" id="username" required>
-                </div>
-                <div class="form-group">
-                    <label for="password">Password:</label>
-                    <input type="password" id="password" required>
-                </div>
-                <div class="form-group" id="confirmPasswordGroup" style="display: none;">
-                    <label for="confirmPassword">Confirm Password:</label>
-                    <input type="password" id="confirmPassword">
+                    <label for="learnerName">Learner name:</label>
+                    <input type="text" id="learnerName" maxlength="40" placeholder="Learner" autocomplete="off">
                 </div>
                 <div class="auth-buttons">
-                    <button type="submit" class="auth-btn login-btn" id="authSubmitBtn">Login</button>
+                    <button type="submit" class="auth-btn login-btn">Start Learning</button>
                 </div>
-                <button type="button" class="secondary-btn" id="toggleAuthMode" style="margin-top: 10px;">Need an account? Register</button>
             </form>
         </div>
 
@@ -265,221 +257,113 @@
     </div>
 
     <script>
-        // Authentication state
+        const PROFILE_KEY = 'learnerProfile';
         let currentUser = null;
-        
-        // DOM Elements
-        const authSection = document.getElementById('authSection');
+
+        const profileSection = document.getElementById('profileSection');
         const userGreeting = document.getElementById('userGreeting');
         const userNameSpan = document.getElementById('userName');
-        const authForm = document.getElementById('authForm');
-        const authTitle = document.getElementById('authTitle');
-        const authSubmitBtn = document.getElementById('authSubmitBtn');
-        const toggleAuthMode = document.getElementById('toggleAuthMode');
-        const confirmPasswordGroup = document.getElementById('confirmPasswordGroup');
+        const profileForm = document.getElementById('profileForm');
+        const learnerNameInput = document.getElementById('learnerName');
         const logoutBtn = document.getElementById('logoutBtn');
         const continueLearningBtn = document.getElementById('continueLearningBtn');
-        
-        // Initialize the app
+
         document.addEventListener('DOMContentLoaded', () => {
-            checkUserSession();
-            setupEventListeners();
-        });
-        
-        function setupEventListeners() {
-            authForm.addEventListener('submit', handleAuthSubmit);
-            toggleAuthMode.addEventListener('click', toggleAuthModeHandler);
-            logoutBtn.addEventListener('click', logout);
-            continueLearningBtn.addEventListener('click', () => {
-                if (currentUser && currentUser.lastCourse) {
-                    selectCourse(currentUser.lastCourse);
-                } else {
-                    // Default to games course if no previous course selected
-                    selectCourse('games');
-                }
-            });
-        }
-        
-        function checkUserSession() {
-            const userData = localStorage.getItem('pythonAdventuresUser');
-            if (userData) {
-                currentUser = JSON.parse(userData);
-                showUserGreeting();
-            } else {
-                showAuthSection();
-            }
-        }
-        
-        function showUserGreeting() {
-            authSection.style.display = 'none';
-            userGreeting.style.display = 'block';
-            userNameSpan.textContent = currentUser.username;
-        }
-        
-        function showAuthSection() {
-            authSection.style.display = 'block';
-            userGreeting.style.display = 'none';
-        }
-        
-        function handleAuthSubmit(e) {
-            e.preventDefault();
-            
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            
-            if (isRegisterMode) {
-                const confirmPassword = document.getElementById('confirmPassword').value;
-                
-                if (password !== confirmPassword) {
-                    alert('Passwords do not match!');
-                    return;
-                }
-                
-                registerUser(username, password);
-            } else {
-                loginUser(username, password);
-            }
-        }
-        
-        function registerUser(username, password) {
-            // Simple client-side validation
-            if (username.length < 3) {
-                alert('Username must be at least 3 characters long');
-                return;
-            }
-            
-            if (password.length < 6) {
-                alert('Password must be at least 6 characters long');
-                return;
-            }
-            
-            // Check if user already exists
-            const users = JSON.parse(localStorage.getItem('pythonAdventuresUsers') || '{}');
-            if (users[username]) {
-                alert('Username already exists. Please choose another one.');
-                return;
-            }
-            
-            // Store user (in a real app, this would be hashed)
-            users[username] = {
-                password: password, // In a real app, this should be properly hashed
-                joinDate: new Date().toISOString(),
-                courses: {},
-                achievements: []
-            };
-            
-            localStorage.setItem('pythonAdventuresUsers', JSON.stringify(users));
-            
-            // Login the new user
-            loginUser(username, password);
-        }
-        
-        function loginUser(username, password) {
-            const users = JSON.parse(localStorage.getItem('pythonAdventuresUsers') || '{}');
-            const user = users[username];
-            
-            if (!user) {
-                alert('User not found. Would you like to register?');
-                toggleToRegister();
-                return;
-            }
-            
-            if (user.password !== password) {
-                alert('Incorrect password');
-                return;
-            }
-            
-            // Successful login
-            currentUser = {
-                username: username,
-                ...user
-            };
-            
-            localStorage.setItem('pythonAdventuresUser', JSON.stringify(currentUser));
-            showUserGreeting();
-            
-            // Reset form
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-            document.getElementById('confirmPassword').value = '';
-        }
-        
-        function logout() {
+            // Remove obsolete credential-bearing local data from older builds.
+            localStorage.removeItem('pythonAdventuresUsers');
             localStorage.removeItem('pythonAdventuresUser');
-            currentUser = null;
-            showAuthSection();
-        }
-        
-        // Auth mode toggle
-        let isRegisterMode = false;
-        
-        function toggleAuthModeHandler() {
-            isRegisterMode = !isRegisterMode;
-            updateAuthMode();
-        }
-        
-        function toggleToRegister() {
-            isRegisterMode = true;
-            updateAuthMode();
-        }
-        
-        function updateAuthMode() {
-            if (isRegisterMode) {
-                authTitle.textContent = 'Create Your Account';
-                authSubmitBtn.textContent = 'Register';
-                confirmPasswordGroup.style.display = 'block';
-                toggleAuthMode.textContent = 'Already have an account? Login';
-            } else {
-                authTitle.textContent = 'Welcome Back! Please Log In';
-                authSubmitBtn.textContent = 'Login';
-                confirmPasswordGroup.style.display = 'none';
-                toggleAuthMode.textContent = 'Need an account? Register';
+
+            currentUser = loadProfile();
+            renderProfileState();
+
+            profileForm.addEventListener('submit', event => {
+                event.preventDefault();
+                const name = (learnerNameInput.value || 'Learner').trim().slice(0, 40) || 'Learner';
+                const existing = currentUser || { id: 'local-profile', progress: {}, courses: {} };
+                currentUser = { ...existing, id: 'local-profile', name };
+                saveProfile();
+                renderProfileState();
+            });
+
+            logoutBtn.textContent = 'Reset local profile';
+            logoutBtn.addEventListener('click', resetProfile);
+
+            continueLearningBtn.addEventListener('click', () => {
+                selectCourse(currentUser?.lastCourse || 'games');
+            });
+        });
+
+        function loadProfile() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null');
+                if (!saved || typeof saved !== 'object') return null;
+                return {
+                    id: 'local-profile',
+                    name: typeof saved.name === 'string' ? saved.name.slice(0, 40) : 'Learner',
+                    progress: saved.progress && typeof saved.progress === 'object' ? saved.progress : {},
+                    courses: saved.courses && typeof saved.courses === 'object' ? saved.courses : {},
+                    lastCourse: typeof saved.lastCourse === 'string' ? saved.lastCourse : null
+                };
+            } catch (_) {
+                return null;
             }
         }
-        
-        // Course selection
+
+        function saveProfile() {
+            if (!currentUser) return;
+            localStorage.setItem(PROFILE_KEY, JSON.stringify({
+                name: currentUser.name,
+                progress: currentUser.progress || {},
+                courses: currentUser.courses || {},
+                lastCourse: currentUser.lastCourse || null
+            }));
+        }
+
+        function renderProfileState() {
+            if (currentUser) {
+                profileSection.style.display = 'none';
+                userGreeting.style.display = 'block';
+                userNameSpan.textContent = currentUser.name || 'Learner';
+            } else {
+                profileSection.style.display = 'block';
+                userGreeting.style.display = 'none';
+            }
+        }
+
+        function resetProfile() {
+            if (!window.confirm('Reset local learning progress on this browser?')) return;
+            localStorage.removeItem(PROFILE_KEY);
+            currentUser = null;
+            learnerNameInput.value = '';
+            renderProfileState();
+        }
+
         function selectCourse(courseType) {
             if (!currentUser) {
-                alert('Please log in first to access courses!');
+                learnerNameInput.focus();
                 return;
             }
-            
-            // Save the selected course for this user
-            if (!currentUser.courses) {
-                currentUser.courses = {};
+
+            const routes = {
+                games: 'courses/games.html',
+                space: 'courses/space.html'
+            };
+
+            const route = routes[courseType];
+            if (!route) {
+                alert('This learning track is still a work in progress.');
+                return;
             }
-            currentUser.courses[courseType] = currentUser.courses[courseType] || {
+
+            currentUser.courses ||= {};
+            currentUser.courses[courseType] ||= {
                 started: new Date().toISOString(),
                 progress: 0,
                 levels: {}
             };
             currentUser.lastCourse = courseType;
-            
-            localStorage.setItem('pythonAdventuresUser', JSON.stringify(currentUser));
-            
-            // Redirect to appropriate course page
-            switch(courseType) {
-                case 'games':
-                    window.location.href = 'courses/games.html';
-                    break;
-                case 'space':
-                    window.location.href = 'courses/space.html';
-                    break;
-                case 'iot':
-                    window.location.href = 'courses/iot.html';
-                    break;
-                case 'web':
-                    window.location.href = 'courses/web.html';
-                    break;
-                case 'data':
-                    window.location.href = 'courses/data.html';
-                    break;
-                case 'ai':
-                    window.location.href = 'courses/ai.html';
-                    break;
-                default:
-                    window.location.href = 'courses/default.html';
-            }
+            saveProfile();
+            window.location.href = route;
         }
     </script>
 </body>
